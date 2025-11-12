@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request, Put, Sse, MessageEvent } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AIModel } from '../characters/schemas/character.schema';
+import { Observable } from 'rxjs';
 
 @ApiTags('채팅')
 @Controller('chat')
@@ -79,5 +80,18 @@ export class ChatController {
   async remove(@Request() req, @Param('id') id: string) {
     await this.chatService.delete(id, req.user.userId);
     return { message: '채팅이 삭제되었습니다.' };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Sse(':id/stream')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'AI 스트리밍 응답 (SSE)' })
+  @ApiResponse({ status: 200, description: '스트리밍 응답 성공' })
+  streamMessage(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() messageDto: { content: string },
+  ): Observable<MessageEvent> {
+    return this.chatService.sendStreamingMessage(id, req.user.userId, messageDto.content);
   }
 } 

@@ -86,4 +86,42 @@ export class PaymentController {
   async getPaymentDetail(@Param('id') id: string) {
     return this.paymentService.findById(id);
   }
+
+  // ==================== 빌링(구독) 결제 API ====================
+
+  @UseGuards(JwtAuthGuard)
+  @Post('billing/issue')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '빌링키 발급 (구독용 카드 등록)' })
+  @ApiResponse({ status: 201, description: '빌링키 발급 성공' })
+  async issueBillingKey(@Request() req, @Body() issueDto: { authKey: string }) {
+    return this.paymentService.issueBillingKey(req.user.userId, issueDto.authKey);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('billing/subscribe')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '구독 시작 (빌링키로 자동 결제)' })
+  @ApiResponse({ status: 201, description: '구독 시작 성공' })
+  async startSubscription(@Request() req, @Body() subscribeDto: { planType: string }) {
+    return this.paymentService.startSubscription(req.user.userId, subscribeDto.planType);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('billing/cancel')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '구독 해지' })
+  @ApiResponse({ status: 200, description: '구독 해지 성공' })
+  async cancelSubscription(@Request() req) {
+    return this.paymentService.cancelSubscription(req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('billing/status')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '구독 상태 조회' })
+  @ApiResponse({ status: 200, description: '구독 상태 조회 성공' })
+  async getSubscriptionStatus(@Request() req) {
+    return this.paymentService.getSubscriptionStatus(req.user.userId);
+  }
 } 

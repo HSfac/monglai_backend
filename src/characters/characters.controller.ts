@@ -20,11 +20,29 @@ export class CharactersController {
   @Get()
   @ApiOperation({ summary: '공개 캐릭터 목록 조회' })
   @ApiResponse({ status: 200, description: '캐릭터 목록 조회 성공' })
-  async findAll(@Query('query') query: string) {
+  async findAll(
+    @Query('query') query: string,
+    @Query('tags') tags: string,
+  ) {
+    // 태그 검색
+    if (tags) {
+      const tagArray = tags.split(',').map(tag => tag.trim());
+      return this.charactersService.searchByTags(tagArray);
+    }
+
+    // 텍스트 검색
     if (query) {
       return this.charactersService.search(query);
     }
+
     return this.charactersService.findAll();
+  }
+
+  @Get('tags/popular')
+  @ApiOperation({ summary: '인기 태그 목록 조회' })
+  @ApiResponse({ status: 200, description: '인기 태그 조회 성공' })
+  async getPopularTags(@Query('limit') limit?: number) {
+    return this.charactersService.getPopularTags(limit || 20);
   }
 
   @Get('popular')
@@ -32,6 +50,16 @@ export class CharactersController {
   @ApiResponse({ status: 200, description: '인기 캐릭터 조회 성공' })
   async getPopular() {
     return this.charactersService.getPopular();
+  }
+
+  @Get('leaderboard/ranking')
+  @ApiOperation({ summary: '캐릭터 인기 순위 리더보드' })
+  @ApiResponse({ status: 200, description: '리더보드 조회 성공' })
+  async getLeaderboard(
+    @Query('period') period?: 'daily' | 'weekly' | 'monthly' | 'all-time',
+    @Query('limit') limit?: number,
+  ) {
+    return this.charactersService.getLeaderboard(period || 'all-time', limit || 50);
   }
 
   @Get(':id')
@@ -72,5 +100,52 @@ export class CharactersController {
   @ApiResponse({ status: 200, description: '좋아요 성공' })
   async like(@Param('id') id: string) {
     return this.charactersService.like(id);
+  }
+
+  // ==================== 크리에이터 대시보드 API ====================
+
+  @UseGuards(JwtAuthGuard)
+  @Get('creator/my-characters')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '내가 생성한 캐릭터 목록' })
+  @ApiResponse({ status: 200, description: '캐릭터 목록 조회 성공' })
+  async getMyCharacters(@Request() req) {
+    return this.charactersService.findByCreator(req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('creator/earnings')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '크리에이터 수익 조회' })
+  @ApiResponse({ status: 200, description: '수익 조회 성공' })
+  async getCreatorEarnings(@Request() req, @Query('period') period?: string) {
+    return this.charactersService.getCreatorEarnings(req.user.userId, period);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('creator/dashboard')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '크리에이터 대시보드 통계' })
+  @ApiResponse({ status: 200, description: '대시보드 통계 조회 성공' })
+  async getCreatorDashboard(@Request() req) {
+    const characters = await this.charactersService.findByCreator(req.user.userId);
+    const earnings = await this.charactersService.getCreatorEarnings(req.user.userId);
+
+    const totalUsage = characters.reduce((sum, char) => sum + char.usageCount, 0);
+    const totalLikes = characters.reduce((sum, char) => sum + char.likes, 0);
+
+    return {
+      characters: {
+        total: characters.length,
+        list: characters,
+      },
+      stats: {
+        totalUsage,
+        totalLikes,
+        totalEarnings: earnings.totalEarnings,
+        totalConversations: earnings.totalConversations,
+      },
+      earnings: earnings.earnings,
+    };
   }
 } 

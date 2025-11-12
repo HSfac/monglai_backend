@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Delete, Param, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Put, Delete, Param, Body, UseGuards, Request, Post } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
@@ -52,5 +52,27 @@ export class UsersController {
   @ApiResponse({ status: 200, description: '즐겨찾기 제거 성공' })
   async removeFromFavorites(@Request() req, @Param('characterId') characterId: string) {
     return this.usersService.removeCharacterFromFavorites(req.user.userId, characterId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('me/adult-verify')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '성인인증' })
+  @ApiResponse({ status: 200, description: '성인인증 성공' })
+  async verifyAdult(@Request() req, @Body() verifyDto: { verificationToken: string }) {
+    return this.usersService.verifyAdult(req.user.userId, verifyDto.verificationToken);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me/adult-status')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '성인인증 상태 조회' })
+  @ApiResponse({ status: 200, description: '성인인증 상태 조회 성공' })
+  async getAdultStatus(@Request() req) {
+    const user = await this.usersService.findById(req.user.userId);
+    return {
+      isAdultVerified: user.isAdultVerified,
+      adultVerifiedAt: user.adultVerifiedAt,
+    };
   }
 } 

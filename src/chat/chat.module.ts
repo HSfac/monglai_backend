@@ -6,6 +6,7 @@ import { ChatService } from './chat.service';
 import { CharactersModule } from '../characters/characters.module';
 import { UsersModule } from '../users/users.module';
 import { AIService } from './ai.service';
+import { ContentFilterService } from './content-filter.service';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { AIService } from './ai.service';
     UsersModule,
   ],
   controllers: [ChatController],
-  providers: [ChatService, AIService],
+  providers: [ChatService, AIService, ContentFilterService],
   exports: [ChatService],
 })
 export class ChatModule {} 

@@ -30,4 +30,20 @@ export class UploadService {
 
     return this.s3Service.deleteFile(imageUrl);
   }
+
+  /**
+   * Presigned Upload URL 생성
+   * 클라이언트에서 직접 S3에 업로드할 수 있는 URL 발급
+   */
+  async getPresignedUploadUrl(
+    fileName: string,
+    fileType: string,
+  ): Promise<{ uploadUrl: string; fileKey: string; fileUrl: string }> {
+    // 이미지 파일 타입 검증
+    if (!fileType.includes('image')) {
+      throw new BadRequestException('이미지 파일만 업로드 가능합니다.');
+    }
+
+    return this.s3Service.getPresignedUploadUrl(fileName, fileType, 'images');
+  }
 } 

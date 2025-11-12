@@ -26,7 +26,7 @@ export class UsersService {
     return user;
   }
 
-  async findByEmail(email: string): Promise<User> {
+  async findByEmail(email: string): Promise<User | null> {
     return this.userModel.findOne({ email }).exec();
   }
 
@@ -76,16 +76,18 @@ export class UsersService {
 
   async addCharacterToCreated(userId: string, characterId: string): Promise<User> {
     const user = await this.findById(userId);
-    if (!user.createdCharacters.includes(characterId)) {
-      user.createdCharacters.push(characterId);
+    const charId = characterId as any;
+    if (!user.createdCharacters.includes(charId)) {
+      user.createdCharacters.push(charId);
     }
     return user.save();
   }
 
   async addCharacterToFavorites(userId: string, characterId: string): Promise<User> {
     const user = await this.findById(userId);
-    if (!user.favoriteCharacters.includes(characterId)) {
-      user.favoriteCharacters.push(characterId);
+    const charId = characterId as any;
+    if (!user.favoriteCharacters.includes(charId)) {
+      user.favoriteCharacters.push(charId);
     }
     return user.save();
   }
@@ -106,7 +108,61 @@ export class UsersService {
       tokens: 10, // 신규 가입 보너스 토큰
       isSocialLogin: true,
     });
-    
+
     return newUser.save();
+  }
+
+  /**
+   * 성인인증 처리
+   * @param userId 사용자 ID
+   * @param verificationToken 인증 토큰 (실제로는 Pass/NICE 같은 본인인증 서비스 연동 필요)
+   */
+  async verifyAdult(userId: string, verificationToken: string): Promise<any> {
+    const user = await this.findById(userId);
+
+    // TODO: 실제 본인인증 API와 연동하여 성인 여부 확인
+    // 현재는 간단한 토큰 검증만 수행
+    if (!verificationToken || verificationToken.length < 10) {
+      throw new BadRequestException('유효하지 않은 인증 토큰입니다.');
+    }
+
+    user.isAdultVerified = true;
+    user.adultVerifiedAt = new Date();
+    await user.save();
+
+    return {
+      success: true,
+      message: '성인인증이 완료되었습니다.',
+      isAdultVerified: true,
+      adultVerifiedAt: user.adultVerifiedAt,
+    };
+  }
+
+  /**
+   * CI로 사용자 찾기 (중복 인증 방지용)
+   */
+  async findByCI(ci: string): Promise<User | null> {
+    return this.userModel.findOne({ verificationCI: ci }).exec();
+  }
+
+  /**
+   * 본인인증 정보 업데이트
+   */
+  async updateAdultVerification(
+    userId: string,
+    verificationData: {
+      isAdultVerified: boolean;
+      adultVerifiedAt: Date;
+      verificationCI: string;
+      verificationName: string;
+      verificationBirthDate: string;
+    },
+  ): Promise<User> {
+    const user = await this.findById(userId);
+
+    Object.assign(user, verificationData);
+    await user.save();
+
+    return user;
   }
 } 

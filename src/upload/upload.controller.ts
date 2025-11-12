@@ -49,4 +49,24 @@ export class UploadController {
     await this.uploadService.deleteImage(body.imageUrl);
     return { message: '이미지가 삭제되었습니다.' };
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('presigned-url')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Presigned Upload URL 생성' })
+  @ApiResponse({
+    status: 201,
+    description: 'Presigned URL 생성 성공',
+    schema: {
+      type: 'object',
+      properties: {
+        uploadUrl: { type: 'string' },
+        fileKey: { type: 'string' },
+        fileUrl: { type: 'string' },
+      },
+    },
+  })
+  async getPresignedUploadUrl(@Body() body: { fileName: string; fileType: string }) {
+    return this.uploadService.getPresignedUploadUrl(body.fileName, body.fileType);
+  }
 } 

@@ -4,7 +4,7 @@ import { Document, Schema as MongooseSchema } from 'mongoose';
 export enum AIModel {
   GPT4 = 'gpt4',
   CLAUDE3 = 'claude3',
-  MISTRAL = 'mistral',
+  GROK = 'grok',
   CUSTOM = 'custom',
 }
 
@@ -45,6 +45,9 @@ export class Character extends Document {
 
   @Prop({ default: false })
   isVerified: boolean;
+
+  @Prop({ default: false })
+  isAdultContent: boolean;
 }
 
 export const CharacterSchema = SchemaFactory.createForClass(Character); 

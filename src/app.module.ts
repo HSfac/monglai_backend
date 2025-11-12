@@ -10,6 +10,8 @@ import { ChatModule } from './chat/chat.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PaymentModule } from './payment/payment.module';
 import { UploadModule } from './upload/upload.module';
+import { AdminModule } from './admin/admin.module';
+import { VerificationModule } from './verification/verification.module';
 
 @Module({
   imports: [
@@ -31,6 +33,8 @@ import { UploadModule } from './upload/upload.module';
     NotificationsModule,
     PaymentModule,
     UploadModule,
+    AdminModule,
+    VerificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

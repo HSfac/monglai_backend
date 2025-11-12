@@ -45,8 +45,32 @@ export class User extends Document {
   @Prop()
   subscriptionEndDate: Date;
 
+  @Prop()
+  billingKey: string;
+
+  @Prop()
+  customerKey: string;
+
   @Prop({ default: false })
   isVerified: boolean;
+
+  @Prop({ default: false })
+  isAdmin: boolean;
+
+  @Prop({ default: false })
+  isAdultVerified: boolean;
+
+  @Prop()
+  adultVerifiedAt: Date;
+
+  @Prop({ unique: true, sparse: true })
+  verificationCI: string; // Connecting Information (NICE 본인인증)
+
+  @Prop()
+  verificationName: string; // 본인인증 시 이름
+
+  @Prop()
+  verificationBirthDate: string; // 본인인증 시 생년월일 (YYYYMMDD)
 }
 
 export const UserSchema = SchemaFactory.createForClass(User); 

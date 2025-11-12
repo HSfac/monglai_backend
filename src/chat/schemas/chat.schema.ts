@@ -13,8 +13,8 @@ export class Message {
   @Prop({ default: Date.now })
   timestamp: Date;
 
-  @Prop()
-  tokensUsed: number;
+  @Prop({ default: 0 })
+  tokensUsed?: number;
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);
