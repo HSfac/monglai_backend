@@ -12,6 +12,7 @@ import { PaymentModule } from './payment/payment.module';
 import { UploadModule } from './upload/upload.module';
 import { AdminModule } from './admin/admin.module';
 import { VerificationModule } from './verification/verification.module';
+import { BannerModule } from './banner/banner.module';
 import { validate } from './config/env.validation';
 
 @Module({
@@ -37,6 +38,7 @@ import { validate } from './config/env.validation';
     UploadModule,
     AdminModule,
     VerificationModule,
+    BannerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
