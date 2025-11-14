@@ -5,6 +5,9 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { AIModel } from '../characters/schemas/character.schema';
 import { Observable } from 'rxjs';
 import { Response } from 'express';
+import { CreateChatDto } from './dto/create-chat.dto';
+import { SendMessageDto } from './dto/send-message.dto';
+import { ChangeAIModelDto } from './dto/change-ai-model.dto';
 
 @ApiTags('채팅')
 @Controller('chat')
@@ -18,7 +21,7 @@ export class ChatController {
   @ApiResponse({ status: 201, description: '채팅 생성 성공' })
   async create(
     @Request() req,
-    @Body() createChatDto: { characterId: string; aiModel?: AIModel },
+    @Body() createChatDto: CreateChatDto,
   ) {
     return this.chatService.create(
       req.user.userId,
@@ -55,7 +58,7 @@ export class ChatController {
   async sendMessage(
     @Request() req,
     @Param('id') id: string,
-    @Body() messageDto: { content: string },
+    @Body() messageDto: SendMessageDto,
   ) {
     return this.chatService.sendMessage(id, req.user.userId, messageDto.content);
   }
@@ -68,7 +71,7 @@ export class ChatController {
   async changeAIModel(
     @Request() req,
     @Param('id') id: string,
-    @Body() modelDto: { aiModel: AIModel },
+    @Body() modelDto: ChangeAIModelDto,
   ) {
     return this.chatService.changeAIModel(id, req.user.userId, modelDto.aiModel);
   }
@@ -91,7 +94,7 @@ export class ChatController {
   async streamMessagePost(
     @Request() req,
     @Param('id') id: string,
-    @Body() messageDto: { content: string },
+    @Body() messageDto: SendMessageDto,
     @Res() res: Response,
   ) {
     // SSE 헤더 설정

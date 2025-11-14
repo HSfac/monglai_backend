@@ -12,12 +12,14 @@ import { PaymentModule } from './payment/payment.module';
 import { UploadModule } from './upload/upload.module';
 import { AdminModule } from './admin/admin.module';
 import { VerificationModule } from './verification/verification.module';
+import { validate } from './config/env.validation';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: `.env`,
+      validate, // 환경변수 검증 추가
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],

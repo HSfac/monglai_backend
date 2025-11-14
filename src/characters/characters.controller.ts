@@ -2,6 +2,8 @@ import { Controller, Get, Post, Body, Param, Put, Delete, Query, UseGuards, Requ
 import { CharactersService } from './characters.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { CreateCharacterDto } from './dto/create-character.dto';
+import { UpdateCharacterDto } from './dto/update-character.dto';
 
 @ApiTags('캐릭터')
 @Controller('characters')
@@ -13,7 +15,7 @@ export class CharactersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: '새 캐릭터 생성' })
   @ApiResponse({ status: 201, description: '캐릭터 생성 성공' })
-  async create(@Request() req, @Body() createCharacterDto: any) {
+  async create(@Request() req, @Body() createCharacterDto: CreateCharacterDto) {
     return this.charactersService.create(req.user.userId, createCharacterDto);
   }
 
@@ -79,7 +81,7 @@ export class CharactersController {
   async update(
     @Request() req,
     @Param('id') id: string,
-    @Body() updateCharacterDto: any,
+    @Body() updateCharacterDto: UpdateCharacterDto,
   ) {
     return this.charactersService.update(id, req.user.userId, updateCharacterDto);
   }

@@ -38,12 +38,13 @@ export class UploadService {
   async getPresignedUploadUrl(
     fileName: string,
     fileType: string,
+    folder?: string,
   ): Promise<{ uploadUrl: string; fileKey: string; fileUrl: string }> {
     // 이미지 파일 타입 검증
     if (!fileType.includes('image')) {
       throw new BadRequestException('이미지 파일만 업로드 가능합니다.');
     }
 
-    return this.s3Service.getPresignedUploadUrl(fileName, fileType, 'images');
+    return this.s3Service.getPresignedUploadUrl(fileName, fileType, folder || 'images');
   }
 } 

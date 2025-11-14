@@ -1,8 +1,8 @@
-import { 
-  Controller, 
-  Post, 
-  UseGuards, 
-  UseInterceptors, 
+import {
+  Controller,
+  Post,
+  UseGuards,
+  UseInterceptors,
   UploadedFile,
   Delete,
   Body,
@@ -11,6 +11,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UploadService } from './upload.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { GetPresignedUrlDto, DeleteImageDto } from './dto/presigned-url.dto';
 
 @ApiTags('업로드')
 @Controller('upload')
@@ -45,7 +46,7 @@ export class UploadController {
   @ApiBearerAuth()
   @ApiOperation({ summary: '이미지 삭제' })
   @ApiResponse({ status: 200, description: '이미지 삭제 성공' })
-  async deleteImage(@Body() body: { imageUrl: string }) {
+  async deleteImage(@Body() body: DeleteImageDto) {
     await this.uploadService.deleteImage(body.imageUrl);
     return { message: '이미지가 삭제되었습니다.' };
   }
@@ -66,7 +67,11 @@ export class UploadController {
       },
     },
   })
-  async getPresignedUploadUrl(@Body() body: { fileName: string; fileType: string }) {
-    return this.uploadService.getPresignedUploadUrl(body.fileName, body.fileType);
+  async getPresignedUploadUrl(@Body() body: GetPresignedUrlDto) {
+    return this.uploadService.getPresignedUploadUrl(
+      body.fileName,
+      body.fileType,
+      body.folder,
+    );
   }
 } 
