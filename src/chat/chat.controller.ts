@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request, Put, Sse, MessageEvent } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request, Put, Sse, MessageEvent, Res, HttpStatus } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AIModel } from '../characters/schemas/character.schema';
 import { Observable } from 'rxjs';
+import { Response } from 'express';
 
 @ApiTags('채팅')
 @Controller('chat')
@@ -83,15 +84,36 @@ export class ChatController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Sse(':id/stream')
+  @Post(':id/stream')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'AI 스트리밍 응답 (SSE)' })
-  @ApiResponse({ status: 200, description: '스트리밍 응답 성공' })
-  streamMessage(
+  @ApiOperation({ summary: 'AI 스트리밍 응답 (POST + SSE)' })
+  @ApiResponse({ status: 200, description: '스트리밍 응답 시작' })
+  async streamMessagePost(
     @Request() req,
     @Param('id') id: string,
     @Body() messageDto: { content: string },
-  ): Observable<MessageEvent> {
-    return this.chatService.sendStreamingMessage(id, req.user.userId, messageDto.content);
+    @Res() res: Response,
+  ) {
+    // SSE 헤더 설정
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.flushHeaders();
+
+    // 스트리밍 응답 구독
+    this.chatService.sendStreamingMessage(id, req.user.userId, messageDto.content)
+      .subscribe({
+        next: (event: MessageEvent) => {
+          res.write(`data: ${event.data}\n\n`);
+        },
+        error: (error) => {
+          res.write(`data: ${JSON.stringify({ type: 'error', message: error.message })}\n\n`);
+          res.end();
+        },
+        complete: () => {
+          res.end();
+        },
+      });
   }
 } 
