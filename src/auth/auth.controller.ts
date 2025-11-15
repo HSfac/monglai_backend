@@ -79,7 +79,39 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   @ApiOperation({ summary: '구글 로그인 콜백' })
-  googleAuthCallback(@Request() req) {
-    return this.authService.login(req.user);
+  async googleAuthCallback(@Request() req) {
+    const { email, username, provider, providerId, profileImage } = req.user;
+    return this.authService.socialLogin(email, username, provider, providerId, profileImage);
+  }
+
+  @Get('kakao')
+  @UseGuards(AuthGuard('kakao'))
+  @ApiOperation({ summary: '카카오 로그인' })
+  kakaoAuth() {
+    // 카카오 인증 리다이렉트
+  }
+
+  @Get('kakao/callback')
+  @UseGuards(AuthGuard('kakao'))
+  @ApiOperation({ summary: '카카오 로그인 콜백' })
+  async kakaoAuthCallback(@Request() req) {
+    const { email, username, provider, providerId, profileImage } = req.user;
+    return this.authService.socialLogin(email, username, provider, providerId, profileImage);
+  }
+
+  @Post('password-reset/request')
+  @ApiOperation({ summary: '비밀번호 재설정 요청' })
+  @ApiResponse({ status: 200, description: '재설정 이메일 발송 성공' })
+  async requestPasswordReset(@Body() body: { email: string }) {
+    return this.authService.requestPasswordReset(body.email);
+  }
+
+  @Post('password-reset/confirm')
+  @ApiOperation({ summary: '비밀번호 재설정 확인' })
+  @ApiResponse({ status: 200, description: '비밀번호 재설정 성공' })
+  async resetPassword(
+    @Body() body: { email: string; token: string; newPassword: string }
+  ) {
+    return this.authService.resetPassword(body.email, body.token, body.newPassword);
   }
 } 

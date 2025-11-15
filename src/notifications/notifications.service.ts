@@ -1,12 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Notification, NotificationType } from './schemas/notification.schema';
+import { NotificationsGateway } from './notifications.gateway';
 
 @Injectable()
 export class NotificationsService {
   constructor(
     @InjectModel(Notification.name) private notificationModel: Model<Notification>,
+    @Inject(forwardRef(() => NotificationsGateway))
+    private notificationsGateway: NotificationsGateway,
   ) {}
 
   async create(
@@ -24,8 +27,15 @@ export class NotificationsService {
       link,
       isRead: false,
     });
-    
-    return newNotification.save();
+
+    const savedNotification = await newNotification.save();
+
+    // WebSocket으로 실시간 알림 전송
+    if (this.notificationsGateway) {
+      await this.notificationsGateway.sendNotificationToUser(userId, savedNotification);
+    }
+
+    return savedNotification;
   }
 
   async findByUser(userId: string): Promise<Notification[]> {
@@ -33,6 +43,36 @@ export class NotificationsService {
       .find({ userId })
       .sort({ createdAt: -1 })
       .exec();
+  }
+
+  async findByUserPaginated(
+    userId: string,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<{
+    notifications: Notification[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const skip = (page - 1) * limit;
+
+    const [notifications, total] = await Promise.all([
+      this.notificationModel
+        .find({ userId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.notificationModel.countDocuments({ userId }),
+    ]);
+
+    return {
+      notifications,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async markAsRead(id: string): Promise<Notification | null> {

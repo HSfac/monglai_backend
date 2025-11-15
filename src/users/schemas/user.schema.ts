@@ -12,7 +12,7 @@ export class User extends Document {
   @Prop({ required: true, unique: true })
   email: string;
 
-  @Prop({ required: true })
+  @Prop()
   password: string;
 
   @Prop({ required: true })
@@ -71,6 +71,22 @@ export class User extends Document {
 
   @Prop()
   verificationBirthDate: string; // 본인인증 시 생년월일 (YYYYMMDD)
+
+  @Prop({ default: false })
+  isSocialLogin: boolean;
+
+  @Prop({ type: Object, default: {} })
+  socialProviders: {
+    google?: string;
+    kakao?: string;
+    [key: string]: string | undefined;
+  };
+
+  @Prop()
+  passwordResetToken: string;
+
+  @Prop()
+  passwordResetExpires: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User); 

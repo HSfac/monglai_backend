@@ -100,16 +100,44 @@ export class UsersService {
     return user.save();
   }
 
-  async createSocialUser(email: string, username: string, profileImage?: string): Promise<User> {
+  async findByProviderId(provider: string, providerId: string): Promise<User | null> {
+    return this.userModel.findOne({
+      [`socialProviders.${provider}`]: providerId
+    }).exec();
+  }
+
+  async createSocialUser(
+    email: string,
+    username: string,
+    provider: string,
+    providerId: string,
+    profileImage?: string
+  ): Promise<User> {
     const newUser = new this.userModel({
       email,
       username,
       profileImage,
       tokens: 10, // 신규 가입 보너스 토큰
       isSocialLogin: true,
+      socialProviders: {
+        [provider]: providerId
+      }
     });
 
     return newUser.save();
+  }
+
+  async linkSocialProvider(
+    userId: string,
+    provider: string,
+    providerId: string
+  ): Promise<User> {
+    const user = await this.findById(userId);
+    if (!user.socialProviders) {
+      user.socialProviders = {};
+    }
+    user.socialProviders[provider] = providerId;
+    return user.save();
   }
 
   /**
