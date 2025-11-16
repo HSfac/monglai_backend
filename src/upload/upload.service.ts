@@ -1,11 +1,25 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { S3Service } from './s3.service';
+import { ImageFilterService } from './image-filter.service';
 
 @Injectable()
 export class UploadService {
-  constructor(private s3Service: S3Service) {}
+  constructor(
+    private s3Service: S3Service,
+    private imageFilterService: ImageFilterService,
+  ) {}
 
-  async uploadImage(file: Express.Multer.File): Promise<string> {
+  /**
+   * 이미지 업로드 (NSFW 필터 적용)
+   * @param file 업로드할 이미지 파일
+   * @param isAdultVerified 성인인증 여부
+   * @param isAdultContent 성인 콘텐츠 여부 (캐릭터 이미지용)
+   */
+  async uploadImage(
+    file: Express.Multer.File,
+    isAdultVerified: boolean = false,
+    isAdultContent: boolean = false,
+  ): Promise<string> {
     if (!file) {
       throw new BadRequestException('이미지 파일이 없습니다.');
     }
@@ -18,6 +32,24 @@ export class UploadService {
     // 파일 크기 제한 (5MB)
     if (file.size > 5 * 1024 * 1024) {
       throw new BadRequestException('파일 크기는 5MB 이하여야 합니다.');
+    }
+
+    // NSFW 이미지 체크
+    try {
+      if (isAdultContent) {
+        // 캐릭터 이미지는 별도 검증
+        await this.imageFilterService.validateCharacterImage(
+          file.buffer,
+          isAdultContent,
+          isAdultVerified,
+        );
+      } else {
+        // 프로필 이미지는 기본 검증
+        await this.imageFilterService.validateProfileImage(file.buffer, isAdultVerified);
+      }
+    } catch (error) {
+      // NSFW 체크 실패 시 업로드 차단
+      throw new BadRequestException(error.message || '부적절한 이미지가 감지되었습니다.');
     }
 
     return this.s3Service.uploadFile(file, 'images');

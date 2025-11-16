@@ -73,18 +73,10 @@ export class ChatService {
       throw new BadRequestException('토큰이 부족합니다. 토큰을 충전해주세요.');
     }
 
-    // 콘텐츠 필터링 (성인인증 여부에 따라 다른 기준 적용)
-    const contentCheck = this.contentFilterService.checkContent(content, user.isAdultVerified);
+    // 콘텐츠 필터링 (OpenAI Moderation API + 키워드 필터)
+    const contentCheck = await this.contentFilterService.checkContent(content, user.isAdultVerified);
     if (contentCheck.isInappropriate) {
       throw new BadRequestException(contentCheck.reason || '부적절한 내용이 포함되어 있습니다.');
-    }
-
-    // 개인정보 감지 경고
-    const personalInfoCheck = this.contentFilterService.detectPersonalInfo(content);
-    if (personalInfoCheck.hasPersonalInfo) {
-      throw new BadRequestException(
-        `개인정보(${personalInfoCheck.types.join(', ')})가 감지되었습니다. 개인정보를 공유하지 마세요.`,
-      );
     }
 
     // 사용자 메시지 추가
@@ -103,7 +95,7 @@ export class ChatService {
     );
 
     // AI 응답 콘텐츠 필터링
-    const aiResponseCheck = this.contentFilterService.checkAIResponse(
+    const aiResponseCheck = await this.contentFilterService.checkAIResponse(
       aiResponse.content,
       user.isAdultVerified,
     );
@@ -208,19 +200,10 @@ export class ChatService {
             return;
           }
 
-          // 콘텐츠 필터링 (성인인증 여부에 따라 다른 기준 적용)
-          const contentCheck = this.contentFilterService.checkContent(content, user.isAdultVerified);
+          // 콘텐츠 필터링 (OpenAI Moderation API + 키워드 필터)
+          const contentCheck = await this.contentFilterService.checkContent(content, user.isAdultVerified);
           if (contentCheck.isInappropriate) {
             observer.error(new BadRequestException(contentCheck.reason || '부적절한 내용이 포함되어 있습니다.'));
-            return;
-          }
-
-          // 개인정보 감지 경고
-          const personalInfoCheck = this.contentFilterService.detectPersonalInfo(content);
-          if (personalInfoCheck.hasPersonalInfo) {
-            observer.error(new BadRequestException(
-              `개인정보(${personalInfoCheck.types.join(', ')})가 감지되었습니다. 개인정보를 공유하지 마세요.`,
-            ));
             return;
           }
 

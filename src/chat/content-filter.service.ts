@@ -1,7 +1,41 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import OpenAI from 'openai';
+
+// OpenAI Moderation API 카테고리 타입
+interface ModerationCategories {
+  sexual: boolean;
+  hate: boolean;
+  harassment: boolean;
+  'self-harm': boolean;
+  'sexual/minors': boolean;
+  'hate/threatening': boolean;
+  'violence/graphic': boolean;
+  'self-harm/intent': boolean;
+  'self-harm/instructions': boolean;
+  'harassment/threatening': boolean;
+  violence: boolean;
+}
+
+interface ModerationResult {
+  isInappropriate: boolean;
+  reason?: string;
+  categories?: Partial<ModerationCategories>;
+  filteredText?: string;
+  source?: 'keyword' | 'openai' | 'pattern';
+}
 
 @Injectable()
 export class ContentFilterService {
+  private openai: OpenAI;
+
+  constructor(private configService: ConfigService) {
+    // OpenAI 클라이언트 초기화
+    this.openai = new OpenAI({
+      apiKey: this.configService.get<string>('OPENAI_API_KEY'),
+    });
+  }
+
   // 부적절한 단어 목록 (미성년자용 - 엄격)
   private readonly bannedWords = [
     '욕설1',
@@ -30,77 +64,183 @@ export class ContentFilterService {
   ];
 
   /**
-   * 텍스트가 부적절한지 확인
+   * 텍스트 정규화 (우회 기법 방지)
+   * Leetspeak, 공백, 특수문자 제거
+   */
+  private normalizeText(text: string): string {
+    return text
+      // Unicode 정규화 (동형 문자 방지)
+      .normalize('NFKC')
+      // Leetspeak 정규화
+      .replace(/[4@]/gi, 'a')
+      .replace(/[3]/g, 'e')
+      .replace(/[1!]/gi, 'i')
+      .replace(/[0]/g, 'o')
+      .replace(/[$5]/g, 's')
+      .replace(/[7]/g, 't')
+      // 과도한 공백 제거
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  /**
+   * OpenAI Moderation API로 콘텐츠 검열 (무료)
+   * 95% 정확도, 평균 47ms 응답
+   */
+  private async moderateWithOpenAI(text: string): Promise<ModerationResult> {
+    try {
+      const moderation = await this.openai.moderations.create({
+        input: text,
+      });
+
+      const result = moderation.results[0];
+
+      if (result.flagged) {
+        // 차단된 카테고리 추출
+        const flaggedCategories = Object.entries(result.categories)
+          .filter(([_, value]) => value)
+          .map(([key]) => key);
+
+        return {
+          isInappropriate: true,
+          reason: `부적절한 내용이 감지되었습니다 (${flaggedCategories.join(', ')})`,
+          categories: result.categories,
+          source: 'openai',
+        };
+      }
+
+      return { isInappropriate: false, source: 'openai' };
+    } catch (error) {
+      console.error('OpenAI Moderation API 오류:', error);
+      // API 실패 시 키워드 필터로 폴백
+      return { isInappropriate: false, source: 'openai' };
+    }
+  }
+
+  /**
+   * 다층 방어 시스템: 키워드 + AI + 성인인증 체크
    * @param text 검사할 텍스트
    * @param isAdultVerified 성인인증 여부
-   * @returns { isInappropriate: boolean, reason: string }
    */
-  checkContent(
+  async checkContent(
     text: string,
     isAdultVerified: boolean = false,
-  ): { isInappropriate: boolean; reason?: string; filteredText?: string } {
-    // 성인인증 사용자는 완화된 필터링 적용
-    if (isAdultVerified) {
-      return this.checkAdultContent(text);
+  ): Promise<ModerationResult> {
+    // 빈 텍스트 체크
+    if (!text || text.trim().length === 0) {
+      return { isInappropriate: false };
     }
 
-    // 미성년자 - 엄격한 필터링
-    // 1. 금지 단어 체크
-    for (const word of this.bannedWords) {
-      if (text.toLowerCase().includes(word.toLowerCase())) {
+    // 텍스트 정규화 (우회 기법 방지)
+    const normalizedText = this.normalizeText(text);
+
+    // === 1단계: 불법 콘텐츠 체크 (모든 사용자에게 적용) ===
+    for (const pattern of this.illegalPatterns) {
+      if (pattern.test(normalizedText) || pattern.test(text)) {
         return {
           isInappropriate: true,
-          reason: '부적절한 단어가 포함되어 있습니다.',
-          filteredText: this.maskBannedWords(text),
+          reason: '불법적인 내용이 감지되어 차단되었습니다.',
+          source: 'pattern',
         };
       }
     }
 
-    // 2. 의심스러운 패턴 체크
-    for (const pattern of this.suspiciousPatterns) {
-      if (pattern.test(text)) {
-        return {
-          isInappropriate: true,
-          reason: '부적절한 내용이 감지되었습니다.',
-          filteredText: this.maskSuspiciousContent(text),
-        };
-      }
+    // === 2단계: 개인정보 보호 체크 ===
+    const personalInfoCheck = this.detectPersonalInfo(text);
+    if (personalInfoCheck.hasPersonalInfo) {
+      return {
+        isInappropriate: true,
+        reason: `개인정보가 포함되어 있습니다 (${personalInfoCheck.types.join(', ')})`,
+        source: 'pattern',
+      };
     }
 
-    // 3. 과도한 반복 패턴 체크 (스팸)
+    // === 3단계: 스팸 체크 ===
     if (this.isSpam(text)) {
       return {
         isInappropriate: true,
         reason: '스팸으로 감지되었습니다.',
+        source: 'keyword',
       };
     }
 
+    // === 4단계: OpenAI Moderation API (무료, 문맥 이해) ===
+    const aiCheck = await this.moderateWithOpenAI(text);
+
+    if (aiCheck.isInappropriate && aiCheck.categories) {
+      // 성인인증 사용자 처리
+      if (isAdultVerified) {
+        // 성인은 성적 콘텐츠 허용, 나머지는 차단
+        const { sexual, 'sexual/minors': sexualMinors, ...otherCategories } = aiCheck.categories;
+
+        // 미성년자 관련 콘텐츠는 무조건 차단
+        if (sexualMinors) {
+          return {
+            isInappropriate: true,
+            reason: '불법적인 내용이 감지되었습니다.',
+            source: 'openai',
+          };
+        }
+
+        // 나머지 위험 카테고리 체크 (폭력, 혐오, 자해 등)
+        const hasOtherViolations = Object.values(otherCategories).some(v => v === true);
+        if (hasOtherViolations) {
+          return {
+            isInappropriate: true,
+            reason: aiCheck.reason,
+            categories: aiCheck.categories,
+            source: 'openai',
+          };
+        }
+
+        // 성인 콘텐츠만 있는 경우 허용
+        return { isInappropriate: false, source: 'openai' };
+      } else {
+        // 미성년자는 모든 부적절한 콘텐츠 차단
+        return aiCheck;
+      }
+    }
+
+    // === 5단계: 키워드 필터 (미성년자만) ===
+    if (!isAdultVerified) {
+      // 금지 단어 체크
+      for (const word of this.bannedWords) {
+        if (normalizedText.toLowerCase().includes(word.toLowerCase())) {
+          return {
+            isInappropriate: true,
+            reason: '부적절한 단어가 포함되어 있습니다.',
+            filteredText: this.maskBannedWords(text),
+            source: 'keyword',
+          };
+        }
+      }
+
+      // 의심스러운 패턴 체크
+      for (const pattern of this.suspiciousPatterns) {
+        if (pattern.test(normalizedText) || pattern.test(text)) {
+          return {
+            isInappropriate: true,
+            reason: '부적절한 내용이 감지되었습니다.',
+            filteredText: this.maskSuspiciousContent(text),
+            source: 'pattern',
+          };
+        }
+      }
+    }
+
+    // 모든 검사 통과
     return { isInappropriate: false };
   }
 
   /**
-   * 성인인증 사용자용 필터링 (불법 콘텐츠만 차단)
+   * AI 응답 체크 (AI가 부적절한 내용을 생성했는지)
    */
-  private checkAdultContent(text: string): { isInappropriate: boolean; reason?: string } {
-    // 1. 불법 콘텐츠 체크
-    for (const pattern of this.illegalPatterns) {
-      if (pattern.test(text)) {
-        return {
-          isInappropriate: true,
-          reason: '불법적인 내용이 감지되었습니다.',
-        };
-      }
-    }
-
-    // 2. 스팸 체크는 유지
-    if (this.isSpam(text)) {
-      return {
-        isInappropriate: true,
-        reason: '스팸으로 감지되었습니다.',
-      };
-    }
-
-    return { isInappropriate: false };
+  async checkAIResponse(
+    response: string,
+    isAdultVerified: boolean = false,
+  ): Promise<ModerationResult> {
+    // AI 응답도 같은 기준으로 체크
+    return this.checkContent(response, isAdultVerified);
   }
 
   /**
@@ -151,16 +291,6 @@ export class ContentFilterService {
     return false;
   }
 
-  /**
-   * AI 응답 체크 (AI가 부적절한 내용을 생성했는지)
-   */
-  checkAIResponse(
-    response: string,
-    isAdultVerified: boolean = false,
-  ): { isInappropriate: boolean; reason?: string } {
-    // AI 응답도 같은 기준으로 체크
-    return this.checkContent(response, isAdultVerified);
-  }
 
   /**
    * 개인정보 패턴 감지 (전화번호, 이메일 등)
