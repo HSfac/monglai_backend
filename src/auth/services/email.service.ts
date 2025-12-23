@@ -5,8 +5,10 @@ import * as nodemailer from 'nodemailer';
 @Injectable()
 export class EmailService {
   private transporter: nodemailer.Transporter;
+  private isDev: boolean;
 
   constructor(private configService: ConfigService) {
+    this.isDev = this.configService.get<string>('NODE_ENV') !== 'production';
     // 이메일 전송을 위한 transporter 설정
     this.transporter = nodemailer.createTransport({
       host: this.configService.get<string>('EMAIL_HOST'),
@@ -42,11 +44,11 @@ export class EmailService {
 
     try {
       await this.transporter.sendMail(mailOptions);
-      console.log(`Password reset email sent to ${email}`);
+      if (this.isDev) {
+        console.log(`[DEV] Password reset email sent to ${email}`);
+      }
     } catch (error) {
       console.error('Error sending email:', error);
-      // 이메일 전송 실패 시 에러를 던지지 않고 로그만 남김
-      // 실제 운영 환경에서는 에러를 던져야 할 수도 있음
     }
   }
 
@@ -83,7 +85,9 @@ export class EmailService {
 
     try {
       await this.transporter.sendMail(mailOptions);
-      console.log(`Welcome email sent to ${email}`);
+      if (this.isDev) {
+        console.log(`[DEV] Welcome email sent to ${email}`);
+      }
     } catch (error) {
       console.error('Error sending welcome email:', error);
     }

@@ -14,6 +14,9 @@ import { UploadModule } from './upload/upload.module';
 import { AdminModule } from './admin/admin.module';
 import { VerificationModule } from './verification/verification.module';
 import { BannerModule } from './banner/banner.module';
+import { WorldsModule } from './worlds/worlds.module';
+import { PersonaPresetsModule } from './persona-presets/persona-presets.module';
+import { MemoryModule } from './memory/memory.module';
 import { validate } from './config/env.validation';
 
 @Module({
@@ -41,6 +44,9 @@ import { validate } from './config/env.validation';
     AdminModule,
     VerificationModule,
     BannerModule,
+    WorldsModule,
+    PersonaPresetsModule,
+    MemoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

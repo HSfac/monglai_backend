@@ -8,6 +8,8 @@ import { Response } from 'express';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { ChangeAIModelDto } from './dto/change-ai-model.dto';
+import { ChangeModeDto } from './dto/change-mode.dto';
+import { UpdateSessionStateDto } from './dto/update-session-state.dto';
 
 @ApiTags('채팅')
 @Controller('chat')
@@ -26,7 +28,12 @@ export class ChatController {
     return this.chatService.create(
       req.user.userId,
       createChatDto.characterId,
-      createChatDto.aiModel,
+      {
+        aiModel: createChatDto.aiModel,
+        presetId: createChatDto.presetId,
+        mode: createChatDto.mode,
+        title: createChatDto.title,
+      },
     );
   }
 
@@ -74,6 +81,50 @@ export class ChatController {
     @Body() modelDto: ChangeAIModelDto,
   ) {
     return this.chatService.changeAIModel(id, req.user.userId, modelDto.aiModel);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':id/mode')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '채팅 모드 변경' })
+  @ApiResponse({ status: 200, description: '모드 변경 성공' })
+  async changeMode(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() modeDto: ChangeModeDto,
+  ) {
+    return this.chatService.changeMode(id, req.user.userId, modeDto.mode);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/state')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '세션 상태 조회' })
+  @ApiResponse({ status: 200, description: '세션 상태 조회 성공' })
+  async getSessionState(@Request() req, @Param('id') id: string) {
+    return this.chatService.getSessionState(id, req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/debug')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '디버그 정보 조회 (크리에이터용)' })
+  @ApiResponse({ status: 200, description: '디버그 정보 조회 성공' })
+  async getDebugInfo(@Request() req, @Param('id') id: string) {
+    return this.chatService.getDebugInfo(id, req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':id/state')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '세션 상태 수정' })
+  @ApiResponse({ status: 200, description: '세션 상태 수정 성공' })
+  async updateSessionState(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() stateDto: UpdateSessionStateDto,
+  ) {
+    return this.chatService.updateSessionState(id, req.user.userId, stateDto);
   }
 
   @UseGuards(JwtAuthGuard)

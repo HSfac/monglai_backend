@@ -36,7 +36,36 @@ export class Character extends Document {
   @Prop({ required: true })
   speakingStyle: string;
 
-  // ==================== 새로 추가된 필드들 ====================
+  // ==================== 세계관 & 캐릭터 고도화 필드 ====================
+
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'World' })
+  worldId: MongooseSchema.Types.ObjectId; // 소속 세계관 (선택)
+
+  @Prop()
+  ageDisplay: string; // 표기 나이: "20대 초반", "수백 년" 등
+
+  @Prop()
+  species: string; // 종족: 인간, 요괴, AI, 엘프 등
+
+  @Prop()
+  role: string; // 역할: 신, 학생, 직장인, 용사 등
+
+  @Prop()
+  appearance: string; // 외형 묘사
+
+  @Prop({ type: [String], default: [] })
+  personalityCore: string[]; // 핵심 성격 키워드: ["밝음", "츤데레", "시니컬"]
+
+  @Prop()
+  backgroundStory: string; // 백스토리
+
+  @Prop({ type: [String], default: [] })
+  characterLikes: string[]; // 좋아하는 것
+
+  @Prop({ type: [String], default: [] })
+  characterDislikes: string[]; // 싫어하는 것
+
+  // ==================== 기존 필드들 ====================
 
   @Prop({ type: [String], default: [] })
   tags: string[];

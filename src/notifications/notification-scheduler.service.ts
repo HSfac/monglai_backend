@@ -50,9 +50,9 @@ export class NotificationSchedulerService {
 
       for (const user of users) {
         const daysLeft = Math.ceil(
-          (user.subscription.endDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
+          ((user as any).subscription.endDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
         );
-        await this.notificationsService.notifySubscriptionExpiring(user._id.toString(), daysLeft);
+        await this.notificationsService.notifySubscriptionExpiring(String(user._id), daysLeft);
       }
 
       this.logger.log(`구독 만료 임박 알림 ${users.length}건 발송 완료`);
@@ -83,7 +83,7 @@ export class NotificationSchedulerService {
           });
 
         if (!recentNotification) {
-          await this.notificationsService.notifyLowTokens(user._id.toString(), user.tokens);
+          await this.notificationsService.notifyLowTokens(String(user._id), user.tokens);
         }
       }
 
@@ -112,9 +112,9 @@ export class NotificationSchedulerService {
         const rank = i + 1;
 
         // 크리에이터에게 알림
-        if (character.creatorId) {
+        if (character.creator) {
           await this.notificationsService.notifyCharacterPopular(
-            character.creatorId.toString(),
+            character.creator.toString(),
             character.name,
             rank,
           );
@@ -139,7 +139,7 @@ export class NotificationSchedulerService {
         .find({ isPublic: true, isDeleted: { $ne: true } })
         .sort({ conversationCount: -1, likeCount: -1 })
         .limit(10)
-        .populate('creatorId', '_id');
+        .populate('creator', '_id');
 
       const bonusTokens = [1000, 750, 500, 400, 300, 250, 200, 150, 100, 50];
 
@@ -148,15 +148,15 @@ export class NotificationSchedulerService {
         const rank = i + 1;
         const bonus = bonusTokens[i];
 
-        if (character.creatorId) {
+        if (character.creator) {
           // 크리에이터에게 보너스 토큰 지급
-          await this.userModel.findByIdAndUpdate(character.creatorId, {
+          await this.userModel.findByIdAndUpdate(character.creator, {
             $inc: { tokens: bonus },
           });
 
           // 알림 발송
           await this.notificationsService.notifyMonthlyBonus(
-            character.creatorId.toString(),
+            character.creator.toString(),
             bonus,
             rank,
           );

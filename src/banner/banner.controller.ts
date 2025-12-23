@@ -9,8 +9,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { BannerService } from './banner.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { AdminGuard } from '../auth/admin.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdminAuthGuard as AdminGuard } from '../auth/guards/admin-auth.guard';
 
 @Controller('banners')
 export class BannerController {

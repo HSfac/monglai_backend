@@ -109,7 +109,7 @@ export class AuthService {
 
       if (user) {
         // 기존 계정에 소셜 연동
-        user = await this.usersService.linkSocialProvider(user._id.toString(), provider, providerId);
+        user = await this.usersService.linkSocialProvider(String(user._id), provider, providerId);
       } else {
         // 새 소셜 계정 생성
         user = await this.usersService.createSocialUser(
@@ -148,9 +148,6 @@ export class AuthService {
       console.error('Failed to send password reset email:', err);
     });
 
-    // 개발 중에는 콘솔에도 출력
-    console.log(`Password reset token for ${email}: ${resetToken}`);
-
     return { message: '비밀번호 재설정 이메일을 발송했습니다.' };
   }
 
@@ -179,8 +176,8 @@ export class AuthService {
     // 비밀번호 업데이트 및 토큰 삭제
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
+    (user as any).passwordResetToken = undefined;
+    (user as any).passwordResetExpires = undefined;
     await user.save();
 
     return { message: '비밀번호가 성공적으로 재설정되었습니다.' };

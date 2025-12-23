@@ -10,9 +10,9 @@ export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
     super({
       authorizationURL: 'https://kauth.kakao.com/oauth/authorize',
       tokenURL: 'https://kauth.kakao.com/oauth/token',
-      clientID: configService.get<string>('KAKAO_CLIENT_ID'),
-      clientSecret: configService.get<string>('KAKAO_CLIENT_SECRET'),
-      callbackURL: configService.get<string>('KAKAO_CALLBACK_URL'),
+      clientID: configService.get<string>('KAKAO_CLIENT_ID') || '',
+      clientSecret: configService.get<string>('KAKAO_CLIENT_SECRET') || '',
+      callbackURL: configService.get<string>('KAKAO_CALLBACK_URL') || '',
       scope: ['profile_nickname', 'account_email'],
     });
   }

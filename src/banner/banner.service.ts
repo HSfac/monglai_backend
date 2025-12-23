@@ -40,13 +40,13 @@ export class BannerService {
     return banner.save();
   }
 
-  async update(id: string, updateBannerDto: any): Promise<Banner> {
+  async update(id: string, updateBannerDto: any): Promise<Banner | null> {
     return this.bannerModel
       .findByIdAndUpdate(id, updateBannerDto, { new: true })
       .exec();
   }
 
-  async delete(id: string): Promise<Banner> {
+  async delete(id: string): Promise<Banner | null> {
     return this.bannerModel.findByIdAndDelete(id).exec();
   }
 }

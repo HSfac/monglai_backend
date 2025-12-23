@@ -269,4 +269,186 @@ export class AIService {
 
     return { totalTokensUsed };
   }
+
+  /**
+   * ContextBuilder에서 생성한 시스템 프롬프트를 사용하여 응답 생성
+   */
+  async generateResponseWithContext(
+    aiModel: AIModel,
+    systemPrompt: string,
+    messages: Array<{ role: string; content: string }>,
+  ): Promise<{ content: string; tokensUsed: number }> {
+    const fullMessages = [
+      { role: 'system', content: systemPrompt },
+      ...messages,
+    ];
+
+    switch (aiModel) {
+      case AIModel.GPT4:
+        return this.callGPT4(fullMessages);
+      case AIModel.CLAUDE3:
+        return this.callClaude3(fullMessages);
+      case AIModel.GROK:
+        return this.callGrok(fullMessages);
+      case AIModel.CUSTOM:
+        return this.callGPT4(fullMessages);
+      default:
+        return this.callGPT4(fullMessages);
+    }
+  }
+
+  /**
+   * ContextBuilder에서 생성한 시스템 프롬프트를 사용하여 스트리밍 응답 생성
+   */
+  async generateStreamingResponseWithContext(
+    aiModel: AIModel,
+    systemPrompt: string,
+    messages: Array<{ role: string; content: string }>,
+    onChunk: (chunk: string) => void,
+  ): Promise<{ totalTokensUsed: number }> {
+    const fullMessages = [
+      { role: 'system', content: systemPrompt },
+      ...messages,
+    ];
+
+    switch (aiModel) {
+      case AIModel.GPT4:
+        return this.streamGPT4(fullMessages, onChunk);
+      case AIModel.CLAUDE3:
+        return this.streamClaude3(fullMessages, onChunk);
+      case AIModel.GROK:
+        return this.streamGrok(fullMessages, onChunk);
+      case AIModel.CUSTOM:
+        return this.streamGPT4(fullMessages, onChunk);
+      default:
+        return this.streamGPT4(fullMessages, onChunk);
+    }
+  }
+
+  /**
+   * 이미지 분석을 통한 캐릭터 정보 추출 (Vision API)
+   * @param imageUrl 분석할 이미지 URL
+   * @returns 추출된 캐릭터 정보
+   */
+  async analyzeImageForCharacter(imageUrl: string): Promise<{
+    name: string;
+    description: string;
+    personality: string;
+    speakingStyle: string;
+    greeting: string;
+    ageDisplay: string;
+    species: string;
+    role: string;
+    appearance: string;
+    personalityCore: string[];
+    characterLikes: string[];
+    characterDislikes: string[];
+    tags: string[];
+  }> {
+    const systemPrompt = `당신은 이미지를 분석하여 AI 챗봇 캐릭터 정보를 생성하는 전문가입니다.
+주어진 이미지를 분석하여 캐릭터 정보를 JSON 형식으로 반환해주세요.
+
+반드시 다음 JSON 형식으로만 응답하세요 (다른 텍스트 없이):
+{
+  "name": "캐릭터 이름 (이미지에서 추론)",
+  "description": "캐릭터 설명 (2-3문장)",
+  "personality": "성격 특성 (자세히)",
+  "speakingStyle": "말투 스타일",
+  "greeting": "첫 인사말",
+  "ageDisplay": "표시 나이 (예: 20대 초반)",
+  "species": "종족 (인간/요정/로봇 등)",
+  "role": "역할 (예: 마법사, 학생)",
+  "appearance": "외모 설명",
+  "personalityCore": ["핵심 성격1", "핵심 성격2", "핵심 성격3"],
+  "characterLikes": ["좋아하는 것1", "좋아하는 것2"],
+  "characterDislikes": ["싫어하는 것1", "싫어하는 것2"],
+  "tags": ["태그1", "태그2", "태그3"]
+}`;
+
+    try {
+      const response = await this.openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt,
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: '이 이미지의 캐릭터를 분석해주세요.',
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: imageUrl,
+                  detail: 'high',
+                },
+              },
+            ],
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 1000,
+      });
+
+      const content = response.choices[0].message.content || '{}';
+
+      // JSON 파싱 시도
+      try {
+        // JSON 블록 추출 (```json ... ``` 형식 처리)
+        let jsonStr = content;
+        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          jsonStr = jsonMatch[1];
+        } else {
+          // { } 블록 추출
+          const objMatch = content.match(/\{[\s\S]*\}/);
+          if (objMatch) {
+            jsonStr = objMatch[0];
+          }
+        }
+
+        const parsed = JSON.parse(jsonStr);
+        return {
+          name: parsed.name || '새 캐릭터',
+          description: parsed.description || '',
+          personality: parsed.personality || '',
+          speakingStyle: parsed.speakingStyle || '',
+          greeting: parsed.greeting || '안녕하세요!',
+          ageDisplay: parsed.ageDisplay || '',
+          species: parsed.species || '인간',
+          role: parsed.role || '',
+          appearance: parsed.appearance || '',
+          personalityCore: parsed.personalityCore || [],
+          characterLikes: parsed.characterLikes || [],
+          characterDislikes: parsed.characterDislikes || [],
+          tags: parsed.tags || [],
+        };
+      } catch (parseError) {
+        console.error('JSON 파싱 실패:', parseError);
+        // 기본값 반환
+        return {
+          name: '새 캐릭터',
+          description: content.substring(0, 200),
+          personality: '',
+          speakingStyle: '',
+          greeting: '안녕하세요!',
+          ageDisplay: '',
+          species: '인간',
+          role: '',
+          appearance: '',
+          personalityCore: [],
+          characterLikes: [],
+          characterDislikes: [],
+          tags: [],
+        };
+      }
+    } catch (error) {
+      console.error('이미지 분석 실패:', error);
+      throw error;
+    }
+  }
 } 

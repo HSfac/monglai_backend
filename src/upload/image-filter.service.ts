@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import * as nsfwjs from 'nsfwjs';
 import * as tf from '@tensorflow/tfjs-node';
 import * as sharp from 'sharp';
@@ -18,6 +18,7 @@ export interface NSFWResult {
 
 @Injectable()
 export class ImageFilterService {
+  private readonly logger = new Logger(ImageFilterService.name);
   private model: nsfwjs.NSFWJS | null = null;
   private modelLoading: Promise<void> | null = null;
 
@@ -36,11 +37,11 @@ export class ImageFilterService {
 
     this.modelLoading = (async () => {
       try {
-        console.log('NSFW 모델 로딩 중...');
+        this.logger.log('NSFW 모델 로딩 중...');
         this.model = await nsfwjs.load();
-        console.log('NSFW 모델 로딩 완료');
+        this.logger.log('NSFW 모델 로딩 완료');
       } catch (error) {
-        console.error('NSFW 모델 로딩 실패:', error);
+        this.logger.error('NSFW 모델 로딩 실패:', error);
         throw error;
       } finally {
         this.modelLoading = null;

@@ -1,13 +1,18 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Request, Get, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Request, Get, BadRequestException, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
+import { ConfigService } from '@nestjs/config';
 
 @ApiTags('인증')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private configService: ConfigService,
+  ) {}
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
@@ -79,9 +84,12 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   @ApiOperation({ summary: '구글 로그인 콜백' })
-  async googleAuthCallback(@Request() req) {
+  async googleAuthCallback(@Request() req, @Res() res: Response) {
     const { email, username, provider, providerId, profileImage } = req.user;
-    return this.authService.socialLogin(email, username, provider, providerId, profileImage);
+    const result = await this.authService.socialLogin(email, username, provider, providerId, profileImage);
+
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    res.redirect(`${frontendUrl}/auth/callback?access_token=${result.access_token}`);
   }
 
   @Get('kakao')
@@ -94,9 +102,12 @@ export class AuthController {
   @Get('kakao/callback')
   @UseGuards(AuthGuard('kakao'))
   @ApiOperation({ summary: '카카오 로그인 콜백' })
-  async kakaoAuthCallback(@Request() req) {
+  async kakaoAuthCallback(@Request() req, @Res() res: Response) {
     const { email, username, provider, providerId, profileImage } = req.user;
-    return this.authService.socialLogin(email, username, provider, providerId, profileImage);
+    const result = await this.authService.socialLogin(email, username, provider, providerId, profileImage);
+
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    res.redirect(`${frontendUrl}/auth/callback?access_token=${result.access_token}`);
   }
 
   @Post('password-reset/request')

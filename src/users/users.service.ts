@@ -1,12 +1,15 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, CreatorLevel } from './schemas/user.schema';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
+    @Inject(forwardRef(() => NotificationsService))
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(createUserDto: any): Promise<User> {
@@ -63,14 +66,28 @@ export class UsersService {
 
   async updateCreatorLevel(userId: string): Promise<User> {
     const user = await this.findById(userId);
-    
+    const previousLevel = user.creatorLevel;
+
     // 크리에이터 레벨 업데이트 로직
     if (user.popularCharacters >= 5 && user.totalConversations >= 10000) {
       user.creatorLevel = CreatorLevel.LEVEL3;
     } else if (user.popularCharacters >= 1 && user.totalConversations >= 1000) {
       user.creatorLevel = CreatorLevel.LEVEL2;
     }
-    
+
+    // 레벨이 변경되었으면 알림 전송
+    if (previousLevel !== user.creatorLevel) {
+      const levelLabels = {
+        [CreatorLevel.LEVEL1]: 'Level 1 입문',
+        [CreatorLevel.LEVEL2]: 'Level 2 고급',
+        [CreatorLevel.LEVEL3]: 'Level 3 전문가',
+      };
+      await this.notificationsService.notifyCreatorLevelUp(
+        userId,
+        levelLabels[user.creatorLevel] || user.creatorLevel,
+      );
+    }
+
     return user.save();
   }
 

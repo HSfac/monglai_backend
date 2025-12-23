@@ -6,7 +6,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, UseGuards } from '@nestjs/common';
+import { Logger, Inject, forwardRef } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { NotificationsService } from './notifications.service';
 
@@ -26,6 +26,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
   constructor(
     private jwtService: JwtService,
+    @Inject(forwardRef(() => NotificationsService))
     private notificationsService: NotificationsService,
   ) {}
 

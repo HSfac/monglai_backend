@@ -4,11 +4,15 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateCharacterDto } from './dto/create-character.dto';
 import { UpdateCharacterDto } from './dto/update-character.dto';
+import { AIService } from '../chat/ai.service';
 
 @ApiTags('캐릭터')
 @Controller('characters')
 export class CharactersController {
-  constructor(private readonly charactersService: CharactersService) {}
+  constructor(
+    private readonly charactersService: CharactersService,
+    private readonly aiService: AIService,
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -149,5 +153,32 @@ export class CharactersController {
       },
       earnings: earnings.earnings,
     };
+  }
+
+  // ==================== 이미지 기반 캐릭터 생성 ====================
+
+  @UseGuards(JwtAuthGuard)
+  @Post('analyze-image')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '이미지 분석으로 캐릭터 초안 생성' })
+  @ApiResponse({ status: 200, description: '이미지 분석 성공' })
+  @ApiResponse({ status: 400, description: '이미지 URL이 필요합니다' })
+  async analyzeImageForCharacter(@Body() body: { imageUrl: string }) {
+    if (!body.imageUrl) {
+      return { error: '이미지 URL이 필요합니다.' };
+    }
+
+    try {
+      const characterData = await this.aiService.analyzeImageForCharacter(body.imageUrl);
+      return {
+        success: true,
+        data: characterData,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || '이미지 분석에 실패했습니다.',
+      };
+    }
   }
 } 
