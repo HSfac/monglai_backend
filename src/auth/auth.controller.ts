@@ -288,7 +288,7 @@ export class AuthController {
     // CI 중복 확인
     if (body.ci) {
       const existingUser = await this.usersService.findByCI(body.ci);
-      if (existingUser && existingUser._id.toString() !== req.user.userId) {
+      if (existingUser && (existingUser as any)._id.toString() !== req.user.userId) {
         throw new BadRequestException('이미 다른 계정에서 인증된 정보입니다.');
       }
     }
