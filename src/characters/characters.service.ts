@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Character, AIModel } from './schemas/character.schema';
 import { UsersService } from '../users/users.service';
-import { CreatorLevel } from '../users/schemas/user.schema';
+import { CreatorLevel, CREATOR_LEVEL_CONFIG } from '../users/schemas/user.schema';
 import { CreatorEarnings } from './schemas/creator-earnings.schema';
 
 @Injectable()
@@ -25,12 +25,14 @@ export class CharactersService {
 
     // 크리에이터 레벨에 따른 캐릭터 생성 제한 확인
     const createdCharactersCount = user.createdCharacters.length;
+    const levelConfig = CREATOR_LEVEL_CONFIG[user.creatorLevel] || CREATOR_LEVEL_CONFIG[CreatorLevel.LEVEL1];
 
-    if (
-      (user.creatorLevel === CreatorLevel.LEVEL1 && createdCharactersCount >= 1) ||
-      (user.creatorLevel === CreatorLevel.LEVEL2 && createdCharactersCount >= 3)
-    ) {
-      throw new ForbiddenException('크리에이터 레벨에 따른 캐릭터 생성 한도에 도달했습니다.');
+    if (createdCharactersCount >= levelConfig.maxCharacters) {
+      const levelLabel = levelConfig.label;
+      throw new ForbiddenException(
+        `${levelLabel} 크리에이터는 최대 ${levelConfig.maxCharacters}개의 캐릭터만 생성할 수 있습니다. ` +
+        `더 많은 캐릭터를 만들려면 레벨을 올려주세요.`
+      );
     }
 
     // 캐릭터 생성
@@ -182,13 +184,9 @@ export class CharactersService {
     const character = await this.findById(characterId);
     const creator = await this.usersService.findById(character.creator.toString());
 
-    // LEVEL3 크리에이터만 수익 배분
-    if (creator.creatorLevel !== CreatorLevel.LEVEL3) {
-      return;
-    }
-
-    // 수익 배분율 (토큰 비용의 10%)
-    const earningRate = 0.1;
+    // 크리에이터 레벨에 따른 수익 배분율 적용
+    const levelConfig = CREATOR_LEVEL_CONFIG[creator.creatorLevel] || CREATOR_LEVEL_CONFIG[CreatorLevel.LEVEL1];
+    const earningRate = levelConfig.earningRate;
     const tokensEarned = Math.floor(tokenCost * earningRate);
 
     // 현재 월 기준 (예: "2025-01")

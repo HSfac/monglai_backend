@@ -2,10 +2,39 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 
 export enum CreatorLevel {
-  LEVEL1 = 'level1',
-  LEVEL2 = 'level2',
-  LEVEL3 = 'level3',
+  LEVEL1 = 'level1',   // 입문: 30% 수익, 캐릭터 2개
+  LEVEL2 = 'level2',   // 고급: 40% 수익, 캐릭터 5개 (대화 1,000회)
+  LEVEL3 = 'level3',   // 전문가: 50% 수익, 캐릭터 무제한 (대화 10,000회)
+  PARTNER = 'partner', // 파트너: 60% 수익, 캐릭터 무제한, 프로필 배지 (관리자 승인)
 }
+
+// 크리에이터 레벨별 설정
+export const CREATOR_LEVEL_CONFIG = {
+  [CreatorLevel.LEVEL1]: {
+    label: 'Level 1 입문',
+    earningRate: 0.30,      // 30% 수익 배분
+    maxCharacters: 2,       // 최대 캐릭터 수
+    requiredConversations: 0,
+  },
+  [CreatorLevel.LEVEL2]: {
+    label: 'Level 2 고급',
+    earningRate: 0.40,      // 40% 수익 배분
+    maxCharacters: 5,       // 최대 캐릭터 수
+    requiredConversations: 1000,
+  },
+  [CreatorLevel.LEVEL3]: {
+    label: 'Level 3 전문가',
+    earningRate: 0.50,      // 50% 수익 배분
+    maxCharacters: Infinity, // 무제한
+    requiredConversations: 10000,
+  },
+  [CreatorLevel.PARTNER]: {
+    label: '공식 파트너',
+    earningRate: 0.60,      // 60% 수익 배분
+    maxCharacters: Infinity, // 무제한
+    requiredConversations: Infinity, // 관리자 승인 필요
+  },
+};
 
 @Schema({ timestamps: true })
 export class User extends Document {

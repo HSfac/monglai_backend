@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, CreatorLevel } from './schemas/user.schema';
+import { User, CreatorLevel, CREATOR_LEVEL_CONFIG } from './schemas/user.schema';
 import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
@@ -68,24 +68,67 @@ export class UsersService {
     const user = await this.findById(userId);
     const previousLevel = user.creatorLevel;
 
-    // 크리에이터 레벨 업데이트 로직
-    if (user.popularCharacters >= 5 && user.totalConversations >= 10000) {
+    // 파트너는 관리자만 설정 가능하므로 자동 레벨업에서 제외
+    if (user.creatorLevel === CreatorLevel.PARTNER) {
+      return user;
+    }
+
+    // 크리에이터 레벨 업데이트 로직 (대화 횟수 기준)
+    // Level 3: 대화 10,000회 이상
+    if (user.totalConversations >= CREATOR_LEVEL_CONFIG[CreatorLevel.LEVEL3].requiredConversations) {
       user.creatorLevel = CreatorLevel.LEVEL3;
-    } else if (user.popularCharacters >= 1 && user.totalConversations >= 1000) {
+    }
+    // Level 2: 대화 1,000회 이상
+    else if (user.totalConversations >= CREATOR_LEVEL_CONFIG[CreatorLevel.LEVEL2].requiredConversations) {
       user.creatorLevel = CreatorLevel.LEVEL2;
     }
 
     // 레벨이 변경되었으면 알림 전송
     if (previousLevel !== user.creatorLevel) {
-      const levelLabels = {
-        [CreatorLevel.LEVEL1]: 'Level 1 입문',
-        [CreatorLevel.LEVEL2]: 'Level 2 고급',
-        [CreatorLevel.LEVEL3]: 'Level 3 전문가',
-      };
+      const levelConfig = CREATOR_LEVEL_CONFIG[user.creatorLevel];
       await this.notificationsService.notifyCreatorLevelUp(
         userId,
-        levelLabels[user.creatorLevel] || user.creatorLevel,
+        levelConfig.label,
       );
+    }
+
+    return user.save();
+  }
+
+  /**
+   * 관리자용: 사용자를 파트너로 승격
+   */
+  async setPartnerLevel(userId: string): Promise<User> {
+    const user = await this.findById(userId);
+    const previousLevel = user.creatorLevel;
+
+    user.creatorLevel = CreatorLevel.PARTNER;
+
+    if (previousLevel !== CreatorLevel.PARTNER) {
+      await this.notificationsService.notifyCreatorLevelUp(
+        userId,
+        CREATOR_LEVEL_CONFIG[CreatorLevel.PARTNER].label,
+      );
+    }
+
+    return user.save();
+  }
+
+  /**
+   * 관리자용: 파트너 해제
+   */
+  async removePartnerLevel(userId: string): Promise<User> {
+    const user = await this.findById(userId);
+
+    if (user.creatorLevel === CreatorLevel.PARTNER) {
+      // 대화 횟수에 따라 적절한 레벨로 복귀
+      if (user.totalConversations >= CREATOR_LEVEL_CONFIG[CreatorLevel.LEVEL3].requiredConversations) {
+        user.creatorLevel = CreatorLevel.LEVEL3;
+      } else if (user.totalConversations >= CREATOR_LEVEL_CONFIG[CreatorLevel.LEVEL2].requiredConversations) {
+        user.creatorLevel = CreatorLevel.LEVEL2;
+      } else {
+        user.creatorLevel = CreatorLevel.LEVEL1;
+      }
     }
 
     return user.save();
