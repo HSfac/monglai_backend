@@ -27,13 +27,26 @@ export class AuthController {
     if (!loginDto.email || !loginDto.password) {
       throw new BadRequestException('이메일과 비밀번호를 모두 입력해주세요.');
     }
-    
+
     const user = await this.authService.validateUser(loginDto.email, loginDto.password);
     if (!user) {
       throw new BadRequestException('이메일 또는 비밀번호가 올바르지 않습니다.');
     }
-    
+
     return this.authService.login(user);
+  }
+
+  @Post('admin/login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '관리자 로그인' })
+  @ApiResponse({ status: 200, description: '관리자 로그인 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패 또는 관리자 권한 없음' })
+  async adminLogin(@Body() loginDto: { email: string; password: string }) {
+    if (!loginDto.email || !loginDto.password) {
+      throw new BadRequestException('이메일과 비밀번호를 모두 입력해주세요.');
+    }
+
+    return this.authService.adminLogin(loginDto.email, loginDto.password);
   }
 
   @Post('register')

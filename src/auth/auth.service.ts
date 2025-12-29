@@ -37,6 +37,29 @@ export class AuthService {
     };
   }
 
+  async adminLogin(email: string, password: string) {
+    const user = await this.validateUser(email, password);
+    if (!user) {
+      throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
+    }
+
+    if (!user.isAdmin) {
+      throw new UnauthorizedException('관리자 권한이 없습니다.');
+    }
+
+    const payload = { email: user.email, sub: user._id, isAdmin: true };
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        _id: user._id,
+        email: user.email,
+        username: user.username,
+        profileImage: user.profileImage,
+        isAdmin: user.isAdmin,
+      },
+    };
+  }
+
   async register(email: string, password: string, username: string) {
     // 이메일 중복 확인
     const existingUser = await this.usersService.findByEmail(email);
