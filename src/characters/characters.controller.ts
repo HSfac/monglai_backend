@@ -181,4 +181,49 @@ export class CharactersController {
       };
     }
   }
+
+  // ==================== AI 필드 생성 ====================
+
+  @UseGuards(JwtAuthGuard)
+  @Post('generate-field')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'AI로 캐릭터 특정 필드 생성' })
+  @ApiResponse({ status: 200, description: '필드 생성 성공' })
+  @ApiResponse({ status: 400, description: '필드명이 필요합니다' })
+  async generateField(
+    @Body() body: {
+      fieldName: string;
+      context: {
+        name?: string;
+        description?: string;
+        personality?: string;
+        category?: string;
+        species?: string;
+        role?: string;
+      };
+    },
+  ) {
+    if (!body.fieldName) {
+      return {
+        success: false,
+        error: '필드명이 필요합니다.',
+      };
+    }
+
+    try {
+      const generatedData = await this.aiService.generateFieldForCharacter(
+        body.fieldName,
+        body.context || {},
+      );
+      return {
+        success: true,
+        data: generatedData,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'AI 필드 생성에 실패했습니다.',
+      };
+    }
+  }
 } 

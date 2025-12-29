@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { EmailService } from './services/email.service';
+import { PassVerificationService } from './services/pass-verification.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { KakaoStrategy } from './strategies/kakao.strategy';
@@ -14,6 +15,7 @@ import { UsersModule } from '../users/users.module';
   imports: [
     UsersModule,
     PassportModule,
+    ConfigModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -26,7 +28,7 @@ import { UsersModule } from '../users/users.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, EmailService, JwtStrategy, GoogleStrategy, KakaoStrategy],
-  exports: [AuthService],
+  providers: [AuthService, EmailService, PassVerificationService, JwtStrategy, GoogleStrategy, KakaoStrategy],
+  exports: [AuthService, PassVerificationService],
 })
 export class AuthModule {} 

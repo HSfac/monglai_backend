@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, MessageEvent, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, MessageEvent, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Chat, ChatMode, EmbeddedSessionState } from './schemas/chat.schema';
@@ -39,6 +39,14 @@ export class ChatService {
   async create(userId: string, characterId: string, options?: CreateChatOptions): Promise<Chat> {
     // 캐릭터 존재 확인
     const character = await this.charactersService.findById(characterId);
+
+    // 성인 컨텐츠 캐릭터와 대화 시 성인 인증 확인
+    if (character.isAdultContent) {
+      const user = await this.usersService.findById(userId);
+      if (!user.isAdultVerified) {
+        throw new ForbiddenException('성인 컨텐츠 캐릭터와 대화하려면 성인 인증이 필요합니다.');
+      }
+    }
 
     // 새 채팅 생성
     const newChat = new this.chatModel({
