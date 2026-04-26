@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3 } from 'aws-sdk';
 import { v4 as uuidv4 } from 'uuid';
+import { IStorageProvider } from './storage.interface';
 
 @Injectable()
-export class S3Service {
+export class S3Service implements IStorageProvider {
   private s3: S3;
 
   constructor(private configService: ConfigService) {
@@ -15,7 +16,10 @@ export class S3Service {
     });
   }
 
-  async uploadFile(file: Express.Multer.File, folder: string = 'images'): Promise<string> {
+  async uploadFile(
+    file: Express.Multer.File,
+    folder: string = 'images',
+  ): Promise<string> {
     const fileExtension = file.originalname.split('.').pop();
     const fileName = `${folder}/${uuidv4()}.${fileExtension}`;
 
@@ -135,4 +139,4 @@ export class S3Service {
 
     return await this.s3.getSignedUrlPromise('getObject', params);
   }
-} 
+}

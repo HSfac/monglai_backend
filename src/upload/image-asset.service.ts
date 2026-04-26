@@ -12,8 +12,8 @@ import { ImageFilterService } from './image-filter.service';
 
 // 이미지 슬롯 제한 설정
 export const IMAGE_SLOT_LIMITS = {
-  CHARACTER_DEFAULT: 20,    // 캐릭터당 기본 이미지 슬롯
-  WORLD_TOTAL: 100,        // 세계관 전체 이미지 슬롯
+  CHARACTER_DEFAULT: 20, // 캐릭터당 기본 이미지 슬롯
+  WORLD_TOTAL: 100, // 세계관 전체 이미지 슬롯
   MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
 };
 
@@ -115,7 +115,11 @@ export class ImageAssetService {
 
     // 슬롯 제한 체크
     if (dto.characterId) {
-      const usage = await this.getSlotUsage(userId, dto.characterId, dto.worldId);
+      const usage = await this.getSlotUsage(
+        userId,
+        dto.characterId,
+        dto.worldId,
+      );
       if (usage.characterSlots.remaining <= 0) {
         throw new BadRequestException(
           `캐릭터당 최대 ${IMAGE_SLOT_LIMITS.CHARACTER_DEFAULT}개의 이미지만 업로드할 수 있습니다.`,
@@ -139,22 +143,26 @@ export class ImageAssetService {
         isAdultVerified,
       );
     } catch (error) {
-      throw new BadRequestException(error.message || '부적절한 이미지가 감지되었습니다.');
+      throw new BadRequestException(
+        error.message || '부적절한 이미지가 감지되었습니다.',
+      );
     }
 
     // S3 업로드
     const folder = dto.characterId
       ? `characters/${dto.characterId}`
       : dto.worldId
-      ? `worlds/${dto.worldId}`
-      : 'images';
+        ? `worlds/${dto.worldId}`
+        : 'images';
     const url = await this.s3Service.uploadFile(file, folder);
 
     // 자산 생성
     const asset = new this.imageAssetModel({
       ownerId: new Types.ObjectId(userId),
       worldId: dto.worldId ? new Types.ObjectId(dto.worldId) : undefined,
-      characterId: dto.characterId ? new Types.ObjectId(dto.characterId) : undefined,
+      characterId: dto.characterId
+        ? new Types.ObjectId(dto.characterId)
+        : undefined,
       presetId: dto.presetId ? new Types.ObjectId(dto.presetId) : undefined,
       type: dto.type,
       url,
@@ -266,7 +274,10 @@ export class ImageAssetService {
   /**
    * 캐릭터의 모든 이미지 삭제 (캐릭터 삭제 시 호출)
    */
-  async removeByCharacter(characterId: string, userId: string): Promise<number> {
+  async removeByCharacter(
+    characterId: string,
+    userId: string,
+  ): Promise<number> {
     const assets = await this.findByCharacter(characterId);
 
     // 소유자 확인 및 삭제

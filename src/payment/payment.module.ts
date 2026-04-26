@@ -1,6 +1,12 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Payment, PaymentSchema } from './schemas/payment.schema';
+import {
+  Coupon,
+  CouponSchema,
+  CouponUsage,
+  CouponUsageSchema,
+} from '../admin/schemas/coupon.schema';
 import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
 import { UsersModule } from '../users/users.module';
@@ -9,7 +15,11 @@ import { TossPaymentsService } from './toss-payments.service';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Payment.name, schema: PaymentSchema }]),
+    MongooseModule.forFeature([
+      { name: Payment.name, schema: PaymentSchema },
+      { name: Coupon.name, schema: CouponSchema },
+      { name: CouponUsage.name, schema: CouponUsageSchema },
+    ]),
     UsersModule,
     NotificationsModule,
   ],
@@ -17,4 +27,4 @@ import { TossPaymentsService } from './toss-payments.service';
   providers: [PaymentService, TossPaymentsService],
   exports: [PaymentService],
 })
-export class PaymentModule {} 
+export class PaymentModule {}

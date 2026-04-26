@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { MemorySummary, MemorySummarySchema } from './schemas/memory-summary.schema';
+import {
+  MemorySummary,
+  MemorySummarySchema,
+} from './schemas/memory-summary.schema';
 import { UserNote, UserNoteSchema } from './schemas/user-note.schema';
 import { MemoryController } from './memory.controller';
 import { MemoryService } from './memory.service';

@@ -1,8 +1,24 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Request, Get, BadRequestException, Res } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Request,
+  Get,
+  BadRequestException,
+  Res,
+} from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { PassVerificationService } from './services/pass-verification.service';
@@ -28,9 +44,14 @@ export class AuthController {
       throw new BadRequestException('이메일과 비밀번호를 모두 입력해주세요.');
     }
 
-    const user = await this.authService.validateUser(loginDto.email, loginDto.password);
+    const user = await this.authService.validateUser(
+      loginDto.email,
+      loginDto.password,
+    );
     if (!user) {
-      throw new BadRequestException('이메일 또는 비밀번호가 올바르지 않습니다.');
+      throw new BadRequestException(
+        '이메일 또는 비밀번호가 올바르지 않습니다.',
+      );
     }
 
     return this.authService.login(user);
@@ -53,11 +74,15 @@ export class AuthController {
   @ApiOperation({ summary: '회원가입' })
   @ApiResponse({ status: 201, description: '회원가입 성공' })
   @ApiResponse({ status: 400, description: '잘못된 요청' })
-  async register(@Body() registerDto: { email: string; password: string; username: string }) {
+  async register(
+    @Body() registerDto: { email: string; password: string; username: string },
+  ) {
     if (!registerDto.email || !registerDto.password || !registerDto.username) {
-      throw new BadRequestException('이메일, 비밀번호, 사용자명을 모두 입력해주세요.');
+      throw new BadRequestException(
+        '이메일, 비밀번호, 사용자명을 모두 입력해주세요.',
+      );
     }
-    
+
     return this.authService.register(
       registerDto.email,
       registerDto.password,
@@ -103,10 +128,19 @@ export class AuthController {
   @ApiOperation({ summary: '구글 로그인 콜백' })
   async googleAuthCallback(@Request() req, @Res() res: Response) {
     const { email, username, provider, providerId, profileImage } = req.user;
-    const result = await this.authService.socialLogin(email, username, provider, providerId, profileImage);
+    const result = await this.authService.socialLogin(
+      email,
+      username,
+      provider,
+      providerId,
+      profileImage,
+    );
 
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
-    res.redirect(`${frontendUrl}/auth/callback?access_token=${result.access_token}`);
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    res.redirect(
+      `${frontendUrl}/auth/callback?access_token=${result.access_token}`,
+    );
   }
 
   @Get('kakao')
@@ -121,10 +155,19 @@ export class AuthController {
   @ApiOperation({ summary: '카카오 로그인 콜백' })
   async kakaoAuthCallback(@Request() req, @Res() res: Response) {
     const { email, username, provider, providerId, profileImage } = req.user;
-    const result = await this.authService.socialLogin(email, username, provider, providerId, profileImage);
+    const result = await this.authService.socialLogin(
+      email,
+      username,
+      provider,
+      providerId,
+      profileImage,
+    );
 
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
-    res.redirect(`${frontendUrl}/auth/callback?access_token=${result.access_token}`);
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    res.redirect(
+      `${frontendUrl}/auth/callback?access_token=${result.access_token}`,
+    );
   }
 
   @Post('password-reset/request')
@@ -138,9 +181,13 @@ export class AuthController {
   @ApiOperation({ summary: '비밀번호 재설정 확인' })
   @ApiResponse({ status: 200, description: '비밀번호 재설정 성공' })
   async resetPassword(
-    @Body() body: { email: string; token: string; newPassword: string }
+    @Body() body: { email: string; token: string; newPassword: string },
   ) {
-    return this.authService.resetPassword(body.email, body.token, body.newPassword);
+    return this.authService.resetPassword(
+      body.email,
+      body.token,
+      body.newPassword,
+    );
   }
 
   // ==================== 성인인증 (NHN KCP) API ====================
@@ -165,7 +212,8 @@ export class AuthController {
   @ApiOperation({ summary: 'KCP 본인인증 초기화' })
   @ApiResponse({ status: 200, description: '인증 초기화 성공' })
   async initAdultVerification(@Request() req) {
-    const backendUrl = this.configService.get<string>('BACKEND_URL') || 'http://localhost:5001';
+    const backendUrl =
+      this.configService.get<string>('BACKEND_URL') || 'http://localhost:5001';
     const requestNo = this.passVerificationService.generateRequestNo();
 
     const result = await this.passVerificationService.initializeVerification({
@@ -188,11 +236,9 @@ export class AuthController {
 
   @Get('adult-verification/popup')
   @ApiOperation({ summary: 'KCP 인증 팝업 페이지' })
-  async getVerificationPopup(
-    @Res() res: Response,
-    @Request() req,
-  ) {
-    const backendUrl = this.configService.get<string>('BACKEND_URL') || 'http://localhost:5001';
+  async getVerificationPopup(@Res() res: Response, @Request() req) {
+    const backendUrl =
+      this.configService.get<string>('BACKEND_URL') || 'http://localhost:5001';
     const requestNo = this.passVerificationService.generateRequestNo();
 
     const result = await this.passVerificationService.initializeVerification({
@@ -201,13 +247,15 @@ export class AuthController {
     });
 
     if (!result.success) {
-      res.status(400).send(`<html><body><h1>오류</h1><p>${result.error}</p></body></html>`);
+      res
+        .status(400)
+        .send(`<html><body><h1>오류</h1><p>${result.error}</p></body></html>`);
       return;
     }
 
     const html = this.passVerificationService.generatePopupForm(
       result.formData!,
-      result.certUrl!
+      result.certUrl!,
     );
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -218,7 +266,8 @@ export class AuthController {
   @ApiOperation({ summary: 'KCP 본인인증 콜백' })
   @ApiResponse({ status: 200, description: '인증 완료' })
   async adultVerificationCallback(
-    @Body() body: {
+    @Body()
+    body: {
       enc_cert_data?: string;
       dn_hash?: string;
       ordr_idxx?: string;
@@ -226,20 +275,24 @@ export class AuthController {
     },
     @Res() res: Response,
   ) {
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
 
     try {
       // KCP 콜백 데이터 처리
       if (body.enc_cert_data && body.dn_hash && body.ordr_idxx) {
-        const result = await this.passVerificationService.processVerificationResult({
-          enc_cert_data: body.enc_cert_data,
-          dn_hash: body.dn_hash,
-          ordr_idxx: body.ordr_idxx,
-        });
+        const result =
+          await this.passVerificationService.processVerificationResult({
+            enc_cert_data: body.enc_cert_data,
+            dn_hash: body.dn_hash,
+            ordr_idxx: body.ordr_idxx,
+          });
 
         if (!result.success) {
           // 에러 페이지로 리다이렉트
-          res.redirect(`${frontendUrl}/profile?verify=error&message=${encodeURIComponent(result.error || '인증 실패')}`);
+          res.redirect(
+            `${frontendUrl}/profile?verify=error&message=${encodeURIComponent(result.error || '인증 실패')}`,
+          );
           return;
         }
 
@@ -279,9 +332,13 @@ export class AuthController {
       }
 
       // 잘못된 요청
-      res.redirect(`${frontendUrl}/profile?verify=error&message=${encodeURIComponent('잘못된 요청입니다.')}`);
+      res.redirect(
+        `${frontendUrl}/profile?verify=error&message=${encodeURIComponent('잘못된 요청입니다.')}`,
+      );
     } catch (error: any) {
-      res.redirect(`${frontendUrl}/profile?verify=error&message=${encodeURIComponent(error.message || '인증 처리 중 오류가 발생했습니다.')}`);
+      res.redirect(
+        `${frontendUrl}/profile?verify=error&message=${encodeURIComponent(error.message || '인증 처리 중 오류가 발생했습니다.')}`,
+      );
     }
   }
 
@@ -292,16 +349,20 @@ export class AuthController {
   @ApiResponse({ status: 200, description: '인증 정보 저장 성공' })
   async completeAdultVerification(
     @Request() req,
-    @Body() body: {
+    @Body()
+    body: {
       ci: string;
       name: string;
       birthDate: string;
-    }
+    },
   ) {
     // CI 중복 확인
     if (body.ci) {
       const existingUser = await this.usersService.findByCI(body.ci);
-      if (existingUser && (existingUser as any)._id.toString() !== req.user.userId) {
+      if (
+        existingUser &&
+        (existingUser as any)._id.toString() !== req.user.userId
+      ) {
         throw new BadRequestException('이미 다른 계정에서 인증된 정보입니다.');
       }
     }
@@ -320,4 +381,4 @@ export class AuthController {
       message: '성인인증이 완료되었습니다.',
     };
   }
-} 
+}

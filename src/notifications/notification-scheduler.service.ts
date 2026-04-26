@@ -41,18 +41,26 @@ export class NotificationSchedulerService {
       threeDaysLater.setDate(threeDaysLater.getDate() + 3);
 
       const users = await this.userModel.find({
-        'subscription.isActive': true,
-        'subscription.endDate': {
+        isSubscribed: true,
+        subscriptionEndDate: {
           $gte: new Date(),
           $lte: threeDaysLater,
         },
       });
 
       for (const user of users) {
+        if (!user.subscriptionEndDate) {
+          continue;
+        }
+
         const daysLeft = Math.ceil(
-          ((user as any).subscription.endDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
+          (user.subscriptionEndDate.getTime() - new Date().getTime()) /
+            (1000 * 60 * 60 * 24),
         );
-        await this.notificationsService.notifySubscriptionExpiring(String(user._id), daysLeft);
+        await this.notificationsService.notifySubscriptionExpiring(
+          String(user._id),
+          daysLeft,
+        );
       }
 
       this.logger.log(`구독 만료 임박 알림 ${users.length}건 발송 완료`);
@@ -70,20 +78,24 @@ export class NotificationSchedulerService {
     try {
       const users = await this.userModel.find({
         tokens: { $lt: 10, $gt: 0 },
-        'subscription.isActive': false, // 구독자는 제외
+        isSubscribed: false, // 구독자는 제외
       });
 
       for (const user of users) {
         // 최근 24시간 내에 이미 알림을 받았는지 체크 (중복 방지)
-        const recentNotification = await this.notificationsService['notificationModel']
-          .findOne({
-            userId: user._id,
-            title: '토큰 부족',
-            createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-          });
+        const recentNotification = await this.notificationsService[
+          'notificationModel'
+        ].findOne({
+          userId: user._id,
+          title: '토큰 부족',
+          createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        });
 
         if (!recentNotification) {
-          await this.notificationsService.notifyLowTokens(String(user._id), user.tokens);
+          await this.notificationsService.notifyLowTokens(
+            String(user._id),
+            user.tokens,
+          );
         }
       }
 
@@ -102,10 +114,10 @@ export class NotificationSchedulerService {
     try {
       // 최근 7일간 대화 수 기준으로 인기 캐릭터 조회
       const popularCharacters = await this.characterModel
-        .find({ isPublic: true, isDeleted: { $ne: true } })
-        .sort({ conversationCount: -1, likeCount: -1 })
+        .find({ isPublic: true })
+        .sort({ usageCount: -1, likes: -1 })
         .limit(10)
-        .populate('creatorId', '_id');
+        .populate('creator', '_id');
 
       for (let i = 0; i < popularCharacters.length; i++) {
         const character = popularCharacters[i];
@@ -121,7 +133,9 @@ export class NotificationSchedulerService {
         }
       }
 
-      this.logger.log(`인기 캐릭터 ${popularCharacters.length}개 알림 발송 완료`);
+      this.logger.log(
+        `인기 캐릭터 ${popularCharacters.length}개 알림 발송 완료`,
+      );
     } catch (error) {
       this.logger.error('인기 캐릭터 알림 실패', error);
     }
@@ -136,8 +150,8 @@ export class NotificationSchedulerService {
     try {
       // 지난달 인기 캐릭터 Top 10 크리에이터에게 보너스 지급
       const topCharacters = await this.characterModel
-        .find({ isPublic: true, isDeleted: { $ne: true } })
-        .sort({ conversationCount: -1, likeCount: -1 })
+        .find({ isPublic: true })
+        .sort({ usageCount: -1, likes: -1 })
         .limit(10)
         .populate('creator', '_id');
 

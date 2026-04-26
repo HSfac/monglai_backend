@@ -9,9 +9,9 @@ export enum AIModel {
 }
 
 export enum Visibility {
-  PUBLIC = 'public',           // 모두에게 공개
-  UNLISTED = 'unlisted',       // 링크로만 접근 가능
-  PRIVATE = 'private',         // 본인만 접근 가능
+  PUBLIC = 'public', // 모두에게 공개
+  UNLISTED = 'unlisted', // 링크로만 접근 가능
+  PRIVATE = 'private', // 본인만 접근 가능
 }
 
 export interface ExampleDialogue {
@@ -127,4 +127,4 @@ export class Character extends Document {
   isAdultContent: boolean;
 }
 
-export const CharacterSchema = SchemaFactory.createForClass(Character); 
+export const CharacterSchema = SchemaFactory.createForClass(Character);

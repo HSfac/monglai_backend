@@ -1,14 +1,26 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, CreatorLevel, CREATOR_LEVEL_CONFIG } from '../users/schemas/user.schema';
+import {
+  User,
+  CreatorLevel,
+  CREATOR_LEVEL_CONFIG,
+} from '../users/schemas/user.schema';
 import { Character } from '../characters/schemas/character.schema';
 import { Payment, PaymentStatus } from '../payment/schemas/payment.schema';
 import { Chat } from '../chat/schemas/chat.schema';
 import { Report, ReportStatus } from './schemas/report.schema';
 import { Announcement } from './schemas/announcement.schema';
 import { Coupon, CouponUsage } from './schemas/coupon.schema';
-import { Settlement, SettlementStatus, CreatorEarning } from './schemas/settlement.schema';
+import {
+  Settlement,
+  SettlementStatus,
+  CreatorEarning,
+} from './schemas/settlement.schema';
 import { FAQ } from './schemas/faq.schema';
 
 @Injectable()
@@ -19,11 +31,13 @@ export class AdminService {
     @InjectModel(Payment.name) private paymentModel: Model<Payment>,
     @InjectModel(Chat.name) private chatModel: Model<Chat>,
     @InjectModel(Report.name) private reportModel: Model<Report>,
-    @InjectModel(Announcement.name) private announcementModel: Model<Announcement>,
+    @InjectModel(Announcement.name)
+    private announcementModel: Model<Announcement>,
     @InjectModel(Coupon.name) private couponModel: Model<Coupon>,
     @InjectModel(CouponUsage.name) private couponUsageModel: Model<CouponUsage>,
     @InjectModel(Settlement.name) private settlementModel: Model<Settlement>,
-    @InjectModel(CreatorEarning.name) private creatorEarningModel: Model<CreatorEarning>,
+    @InjectModel(CreatorEarning.name)
+    private creatorEarningModel: Model<CreatorEarning>,
     @InjectModel(FAQ.name) private faqModel: Model<FAQ>,
   ) {}
 
@@ -93,10 +107,14 @@ export class AdminService {
     ]);
 
     // 신고 통계
-    const pendingReports = await this.reportModel.countDocuments({ status: ReportStatus.PENDING });
+    const pendingReports = await this.reportModel.countDocuments({
+      status: ReportStatus.PENDING,
+    });
 
     // 정산 대기 통계
-    const pendingSettlements = await this.settlementModel.countDocuments({ status: SettlementStatus.PENDING });
+    const pendingSettlements = await this.settlementModel.countDocuments({
+      status: SettlementStatus.PENDING,
+    });
 
     return {
       users: {
@@ -146,7 +164,12 @@ export class AdminService {
 
     // 일별 매출
     const dailyRevenue = await this.paymentModel.aggregate([
-      { $match: { status: PaymentStatus.COMPLETED, createdAt: { $gte: startDate } } },
+      {
+        $match: {
+          status: PaymentStatus.COMPLETED,
+          createdAt: { $gte: startDate },
+        },
+      },
       {
         $group: {
           _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
@@ -191,7 +214,11 @@ export class AdminService {
 
   // ==================== 사용자 관리 ====================
 
-  async getUsers(page: number = 1, limit: number = 20, search?: string): Promise<any> {
+  async getUsers(
+    page: number = 1,
+    limit: number = 20,
+    search?: string,
+  ): Promise<any> {
     const skip = (page - 1) * limit;
     const query: any = {};
 
@@ -266,9 +293,33 @@ export class AdminService {
     };
   }
 
+  async adjustUserTokens(userId: string, amount: number, reason?: string): Promise<any> {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+
+    const before = user.tokens;
+    user.tokens = Math.max(0, user.tokens + amount);
+    await user.save();
+
+    return {
+      success: true,
+      userId,
+      before,
+      after: user.tokens,
+      adjusted: amount,
+      reason: reason || '',
+    };
+  }
+
   // ==================== 캐릭터 관리 ====================
 
-  async getCharacters(page: number = 1, limit: number = 20, search?: string): Promise<any> {
+  async getCharacters(
+    page: number = 1,
+    limit: number = 20,
+    search?: string,
+  ): Promise<any> {
     const skip = (page - 1) * limit;
     const query: any = {};
 
@@ -440,7 +491,11 @@ export class AdminService {
 
   // ==================== 크리에이터 파트너 관리 ====================
 
-  async getCreators(page: number = 1, limit: number = 20, level?: string): Promise<any> {
+  async getCreators(
+    page: number = 1,
+    limit: number = 20,
+    level?: string,
+  ): Promise<any> {
     const skip = (page - 1) * limit;
     const query: any = {
       createdCharacters: { $exists: true, $ne: [] },
@@ -452,7 +507,9 @@ export class AdminService {
 
     const creators = await this.userModel
       .find(query)
-      .select('username email profileImage creatorLevel totalConversations createdCharacters createdAt')
+      .select(
+        'username email profileImage creatorLevel totalConversations createdCharacters createdAt',
+      )
       .populate('createdCharacters', 'name usageCount likes')
       .sort({ totalConversations: -1 })
       .skip(skip)
@@ -474,7 +531,9 @@ export class AdminService {
     return {
       creators: creators.map((creator) => ({
         ...creator.toObject(),
-        levelConfig: CREATOR_LEVEL_CONFIG[creator.creatorLevel] || CREATOR_LEVEL_CONFIG[CreatorLevel.LEVEL1],
+        levelConfig:
+          CREATOR_LEVEL_CONFIG[creator.creatorLevel] ||
+          CREATOR_LEVEL_CONFIG[CreatorLevel.LEVEL1],
         characterCount: creator.createdCharacters?.length || 0,
       })),
       pagination: {
@@ -525,9 +584,15 @@ export class AdminService {
     }
 
     let newLevel = CreatorLevel.LEVEL1;
-    if (user.totalConversations >= CREATOR_LEVEL_CONFIG[CreatorLevel.LEVEL3].requiredConversations) {
+    if (
+      user.totalConversations >=
+      CREATOR_LEVEL_CONFIG[CreatorLevel.LEVEL3].requiredConversations
+    ) {
       newLevel = CreatorLevel.LEVEL3;
-    } else if (user.totalConversations >= CREATOR_LEVEL_CONFIG[CreatorLevel.LEVEL2].requiredConversations) {
+    } else if (
+      user.totalConversations >=
+      CREATOR_LEVEL_CONFIG[CreatorLevel.LEVEL2].requiredConversations
+    ) {
       newLevel = CreatorLevel.LEVEL2;
     }
 
@@ -545,7 +610,11 @@ export class AdminService {
 
   // ==================== 신고 관리 ====================
 
-  async getReports(page: number = 1, limit: number = 20, status?: string): Promise<any> {
+  async getReports(
+    page: number = 1,
+    limit: number = 20,
+    status?: string,
+  ): Promise<any> {
     const skip = (page - 1) * limit;
     const query: any = {};
 
@@ -577,11 +646,19 @@ export class AdminService {
         limit,
         totalPages: Math.ceil(total / limit),
       },
-      statusStats: statusStats.reduce((acc, s) => ({ ...acc, [s._id]: s.count }), {}),
+      statusStats: statusStats.reduce(
+        (acc, s) => ({ ...acc, [s._id]: s.count }),
+        {},
+      ),
     };
   }
 
-  async updateReportStatus(reportId: string, status: ReportStatus, adminNote?: string, adminId?: string): Promise<any> {
+  async updateReportStatus(
+    reportId: string,
+    status: ReportStatus,
+    adminNote?: string,
+    adminId?: string,
+  ): Promise<any> {
     const report = await this.reportModel.findById(reportId);
     if (!report) {
       throw new NotFoundException('신고를 찾을 수 없습니다.');
@@ -609,7 +686,11 @@ export class AdminService {
 
   // ==================== 공지사항 관리 ====================
 
-  async getAnnouncements(page: number = 1, limit: number = 20, isActive?: boolean): Promise<any> {
+  async getAnnouncements(
+    page: number = 1,
+    limit: number = 20,
+    isActive?: boolean,
+  ): Promise<any> {
     const skip = (page - 1) * limit;
     const query: any = {};
 
@@ -638,7 +719,10 @@ export class AdminService {
     };
   }
 
-  async createAnnouncement(data: Partial<Announcement>, adminId: string): Promise<any> {
+  async createAnnouncement(
+    data: Partial<Announcement>,
+    adminId: string,
+  ): Promise<any> {
     const announcement = new this.announcementModel({
       ...data,
       createdBy: adminId,
@@ -653,11 +737,14 @@ export class AdminService {
     };
   }
 
-  async updateAnnouncement(id: string, data: Partial<Announcement>): Promise<any> {
+  async updateAnnouncement(
+    id: string,
+    data: Partial<Announcement>,
+  ): Promise<any> {
     const announcement = await this.announcementModel.findByIdAndUpdate(
       id,
       { $set: data },
-      { new: true }
+      { new: true },
     );
 
     if (!announcement) {
@@ -685,7 +772,11 @@ export class AdminService {
 
   // ==================== 쿠폰 관리 ====================
 
-  async getCoupons(page: number = 1, limit: number = 20, isActive?: boolean): Promise<any> {
+  async getCoupons(
+    page: number = 1,
+    limit: number = 20,
+    isActive?: boolean,
+  ): Promise<any> {
     const skip = (page - 1) * limit;
     const query: any = {};
 
@@ -739,7 +830,7 @@ export class AdminService {
     const coupon = await this.couponModel.findByIdAndUpdate(
       id,
       { $set: data },
-      { new: true }
+      { new: true },
     );
 
     if (!coupon) {
@@ -786,7 +877,11 @@ export class AdminService {
 
   // ==================== 정산 관리 ====================
 
-  async getSettlements(page: number = 1, limit: number = 20, status?: string): Promise<any> {
+  async getSettlements(
+    page: number = 1,
+    limit: number = 20,
+    status?: string,
+  ): Promise<any> {
     const skip = (page - 1) * limit;
     const query: any = {};
 
@@ -807,7 +902,13 @@ export class AdminService {
 
     // 상태별 통계
     const statusStats = await this.settlementModel.aggregate([
-      { $group: { _id: '$status', count: { $sum: 1 }, totalAmount: { $sum: '$amount' } } },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 },
+          totalAmount: { $sum: '$amount' },
+        },
+      },
     ]);
 
     return {
@@ -818,14 +919,23 @@ export class AdminService {
         limit,
         totalPages: Math.ceil(total / limit),
       },
-      statusStats: statusStats.reduce((acc, s) => ({
-        ...acc,
-        [s._id]: { count: s.count, totalAmount: s.totalAmount }
-      }), {}),
+      statusStats: statusStats.reduce(
+        (acc, s) => ({
+          ...acc,
+          [s._id]: { count: s.count, totalAmount: s.totalAmount },
+        }),
+        {},
+      ),
     };
   }
 
-  async processSettlement(settlementId: string, status: SettlementStatus, adminId: string, adminNote?: string, transactionId?: string): Promise<any> {
+  async processSettlement(
+    settlementId: string,
+    status: SettlementStatus,
+    adminId: string,
+    adminNote?: string,
+    transactionId?: string,
+  ): Promise<any> {
     const settlement = await this.settlementModel.findById(settlementId);
     if (!settlement) {
       throw new NotFoundException('정산을 찾을 수 없습니다.');
@@ -850,9 +960,12 @@ export class AdminService {
         {
           creator: settlement.creator,
           isSettled: false,
-          createdAt: { $gte: settlement.periodStart, $lte: settlement.periodEnd }
+          createdAt: {
+            $gte: settlement.periodStart,
+            $lte: settlement.periodEnd,
+          },
         },
-        { $set: { isSettled: true, settlement: settlement._id } }
+        { $set: { isSettled: true, settlement: settlement._id } },
       );
     }
 
@@ -863,7 +976,11 @@ export class AdminService {
     };
   }
 
-  async getCreatorEarnings(creatorId: string, page: number = 1, limit: number = 50): Promise<any> {
+  async getCreatorEarnings(
+    creatorId: string,
+    page: number = 1,
+    limit: number = 50,
+  ): Promise<any> {
     const skip = (page - 1) * limit;
 
     const earnings = await this.creatorEarningModel
@@ -875,7 +992,9 @@ export class AdminService {
       .limit(limit)
       .exec();
 
-    const total = await this.creatorEarningModel.countDocuments({ creator: creatorId });
+    const total = await this.creatorEarningModel.countDocuments({
+      creator: creatorId,
+    });
 
     // 총 수익
     const totalEarnings = await this.creatorEarningModel.aggregate([
@@ -904,7 +1023,11 @@ export class AdminService {
 
   // ==================== FAQ 관리 ====================
 
-  async getFAQs(page: number = 1, limit: number = 50, category?: string): Promise<any> {
+  async getFAQs(
+    page: number = 1,
+    limit: number = 50,
+    category?: string,
+  ): Promise<any> {
     const skip = (page - 1) * limit;
     const query: any = {};
 
@@ -948,11 +1071,15 @@ export class AdminService {
     };
   }
 
-  async updateFAQ(id: string, data: Partial<FAQ>, adminId: string): Promise<any> {
+  async updateFAQ(
+    id: string,
+    data: Partial<FAQ>,
+    adminId: string,
+  ): Promise<any> {
     const faq = await this.faqModel.findByIdAndUpdate(
       id,
       { $set: { ...data, updatedBy: adminId } },
-      { new: true }
+      { new: true },
     );
 
     if (!faq) {

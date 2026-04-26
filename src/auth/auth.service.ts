@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { EmailService } from './services/email.service';
@@ -14,7 +18,7 @@ export class AuthService {
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
-    if (user && await bcrypt.compare(password, user.password)) {
+    if (user && (await bcrypt.compare(password, user.password))) {
       const { password, ...result } = user.toObject();
       return result;
     }
@@ -40,7 +44,9 @@ export class AuthService {
   async adminLogin(email: string, password: string) {
     const user = await this.validateUser(email, password);
     if (!user) {
-      throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
+      throw new UnauthorizedException(
+        '이메일 또는 비밀번호가 올바르지 않습니다.',
+      );
     }
 
     if (!user.isAdmin) {
@@ -74,7 +80,7 @@ export class AuthService {
 
     // 비밀번호 해싱
     const hashedPassword = await bcrypt.hash(password, 10);
-    
+
     // 사용자 생성
     const newUser = await this.usersService.create({
       email,
@@ -84,7 +90,7 @@ export class AuthService {
     });
 
     // 환영 이메일 발송 (비동기 처리)
-    this.emailService.sendWelcomeEmail(email, username).catch(err => {
+    this.emailService.sendWelcomeEmail(email, username).catch((err) => {
       console.error('Failed to send welcome email:', err);
     });
 
@@ -93,12 +99,19 @@ export class AuthService {
     return this.login(result);
   }
 
-  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
     // 사용자 조회
     const user = await this.usersService.findById(userId);
 
     // 현재 비밀번호 확인
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException('현재 비밀번호가 올바르지 않습니다.');
     }
@@ -121,7 +134,7 @@ export class AuthService {
     username: string,
     provider: string,
     providerId: string,
-    profileImage?: string
+    profileImage?: string,
   ) {
     // 기존 소셜 계정 확인
     let user = await this.usersService.findByProviderId(provider, providerId);
@@ -132,7 +145,11 @@ export class AuthService {
 
       if (user) {
         // 기존 계정에 소셜 연동
-        user = await this.usersService.linkSocialProvider(String(user._id), provider, providerId);
+        user = await this.usersService.linkSocialProvider(
+          String(user._id),
+          provider,
+          providerId,
+        );
       } else {
         // 새 소셜 계정 생성
         user = await this.usersService.createSocialUser(
@@ -140,7 +157,7 @@ export class AuthService {
           username,
           provider,
           providerId,
-          profileImage
+          profileImage,
         );
       }
     }
@@ -167,7 +184,7 @@ export class AuthService {
     await user.save();
 
     // 이메일 발송 (비동기 처리)
-    this.emailService.sendPasswordResetEmail(email, resetToken).catch(err => {
+    this.emailService.sendPasswordResetEmail(email, resetToken).catch((err) => {
       console.error('Failed to send password reset email:', err);
     });
 
@@ -205,4 +222,4 @@ export class AuthService {
 
     return { message: '비밀번호가 성공적으로 재설정되었습니다.' };
   }
-} 
+}

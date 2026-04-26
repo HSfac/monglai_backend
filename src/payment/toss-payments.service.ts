@@ -5,15 +5,29 @@ import axios from 'axios';
 @Injectable()
 export class TossPaymentsService {
   private readonly secretKey: string;
-  private readonly clientKey: string;
+  private readonly frontendUrl: string;
   private readonly apiUrl: string = 'https://api.tosspayments.com/v1';
 
   constructor(private configService: ConfigService) {
-    this.secretKey = this.configService.get<string>('TOSS_PAYMENTS_SECRET_KEY') || '';
-    this.clientKey = this.configService.get<string>('TOSS_PAYMENTS_CLIENT_KEY') || '';
+    this.secretKey =
+      this.configService.get<string>('TOSS_PAYMENTS_SECRET_KEY') ||
+      this.configService.get<string>('TOSS_PAYMENT_SECRET_KEY') ||
+      this.configService.get<string>('TOSS_BILLING_SECRET_KEY') ||
+      '';
+    this.frontendUrl = this.normalizeBaseUrl(
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000',
+    );
   }
 
-  async createPayment(amount: number, orderId: string, orderName: string): Promise<any> {
+  private normalizeBaseUrl(url: string): string {
+    return url.replace(/\/+$/, '');
+  }
+
+  async createPayment(
+    amount: number,
+    orderId: string,
+    orderName: string,
+  ): Promise<any> {
     const auth = Buffer.from(`${this.secretKey}:`).toString('base64');
 
     try {
@@ -23,8 +37,8 @@ export class TossPaymentsService {
           amount,
           orderId,
           orderName,
-          successUrl: `${process.env.FRONTEND_URL}/payment/success`,
-          failUrl: `${process.env.FRONTEND_URL}/payment/fail`,
+          successUrl: `${this.frontendUrl}/payment/success`,
+          failUrl: `${this.frontendUrl}/payment/fail`,
         },
         {
           headers: {
@@ -40,7 +54,11 @@ export class TossPaymentsService {
     }
   }
 
-  async confirmPayment(paymentKey: string, orderId: string, amount: number): Promise<any> {
+  async confirmPayment(
+    paymentKey: string,
+    orderId: string,
+    amount: number,
+  ): Promise<any> {
     const auth = Buffer.from(`${this.secretKey}:`).toString('base64');
 
     try {
@@ -92,11 +110,14 @@ export class TossPaymentsService {
     const auth = Buffer.from(`${this.secretKey}:`).toString('base64');
 
     try {
-      const response = await axios.get(`${this.apiUrl}/payments/${paymentKey}`, {
-        headers: {
-          Authorization: `Basic ${auth}`,
+      const response = await axios.get(
+        `${this.apiUrl}/payments/${paymentKey}`,
+        {
+          headers: {
+            Authorization: `Basic ${auth}`,
+          },
         },
-      });
+      );
 
       return response.data;
     } catch (error) {
@@ -183,11 +204,14 @@ export class TossPaymentsService {
     const auth = Buffer.from(`${this.secretKey}:`).toString('base64');
 
     try {
-      const response = await axios.get(`${this.apiUrl}/billing/authorizations/${billingKey}`, {
-        headers: {
-          Authorization: `Basic ${auth}`,
+      const response = await axios.get(
+        `${this.apiUrl}/billing/authorizations/${billingKey}`,
+        {
+          headers: {
+            Authorization: `Basic ${auth}`,
+          },
         },
-      });
+      );
 
       return response.data;
     } catch (error) {
@@ -203,15 +227,18 @@ export class TossPaymentsService {
     const auth = Buffer.from(`${this.secretKey}:`).toString('base64');
 
     try {
-      const response = await axios.delete(`${this.apiUrl}/billing/authorizations/${billingKey}`, {
-        headers: {
-          Authorization: `Basic ${auth}`,
+      const response = await axios.delete(
+        `${this.apiUrl}/billing/authorizations/${billingKey}`,
+        {
+          headers: {
+            Authorization: `Basic ${auth}`,
+          },
         },
-      });
+      );
 
       return response.data;
     } catch (error) {
       throw new Error(`빌링키 삭제 실패: ${error.message}`);
     }
   }
-} 
+}

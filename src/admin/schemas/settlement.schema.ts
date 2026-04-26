@@ -2,11 +2,11 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 
 export enum SettlementStatus {
-  PENDING = 'pending',       // 정산 대기
+  PENDING = 'pending', // 정산 대기
   PROCESSING = 'processing', // 처리중
-  COMPLETED = 'completed',   // 완료
-  REJECTED = 'rejected',     // 거절
-  CANCELLED = 'cancelled',   // 취소
+  COMPLETED = 'completed', // 완료
+  REJECTED = 'rejected', // 거절
+  CANCELLED = 'cancelled', // 취소
 }
 
 export enum SettlementPeriod {
@@ -68,7 +68,11 @@ export class CreatorEarning extends Document {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
   creator: MongooseSchema.Types.ObjectId;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Character', required: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'Character',
+    required: true,
+  })
   character: MongooseSchema.Types.ObjectId;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
@@ -90,4 +94,5 @@ export class CreatorEarning extends Document {
   settlement: MongooseSchema.Types.ObjectId;
 }
 
-export const CreatorEarningSchema = SchemaFactory.createForClass(CreatorEarning);
+export const CreatorEarningSchema =
+  SchemaFactory.createForClass(CreatorEarning);

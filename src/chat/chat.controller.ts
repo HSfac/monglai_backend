@@ -1,7 +1,26 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request, Put, Sse, MessageEvent, Res, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+  Put,
+  Sse,
+  MessageEvent,
+  Res,
+  HttpStatus,
+} from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { AIModel } from '../characters/schemas/character.schema';
 import { Observable } from 'rxjs';
 import { Response } from 'express';
@@ -21,20 +40,13 @@ export class ChatController {
   @ApiBearerAuth()
   @ApiOperation({ summary: '새 채팅 생성' })
   @ApiResponse({ status: 201, description: '채팅 생성 성공' })
-  async create(
-    @Request() req,
-    @Body() createChatDto: CreateChatDto,
-  ) {
-    return this.chatService.create(
-      req.user.userId,
-      createChatDto.characterId,
-      {
-        aiModel: createChatDto.aiModel,
-        presetId: createChatDto.presetId,
-        mode: createChatDto.mode,
-        title: createChatDto.title,
-      },
-    );
+  async create(@Request() req, @Body() createChatDto: CreateChatDto) {
+    return this.chatService.create(req.user.userId, createChatDto.characterId, {
+      aiModel: createChatDto.aiModel,
+      presetId: createChatDto.presetId,
+      mode: createChatDto.mode,
+      title: createChatDto.title,
+    });
   }
 
   @UseGuards(JwtAuthGuard)
@@ -52,8 +64,8 @@ export class ChatController {
   @ApiOperation({ summary: '채팅 상세 조회' })
   @ApiResponse({ status: 200, description: '채팅 조회 성공' })
   @ApiResponse({ status: 404, description: '채팅을 찾을 수 없음' })
-  async findOne(@Param('id') id: string) {
-    return this.chatService.findById(id);
+  async findOne(@Request() req, @Param('id') id: string) {
+    return this.chatService.findById(id, req.user.userId);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -67,7 +79,11 @@ export class ChatController {
     @Param('id') id: string,
     @Body() messageDto: SendMessageDto,
   ) {
-    return this.chatService.sendMessage(id, req.user.userId, messageDto.content);
+    return this.chatService.sendMessage(
+      id,
+      req.user.userId,
+      messageDto.content,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -80,7 +96,11 @@ export class ChatController {
     @Param('id') id: string,
     @Body() modelDto: ChangeAIModelDto,
   ) {
-    return this.chatService.changeAIModel(id, req.user.userId, modelDto.aiModel);
+    return this.chatService.changeAIModel(
+      id,
+      req.user.userId,
+      modelDto.aiModel,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -156,13 +176,16 @@ export class ChatController {
     res.flushHeaders();
 
     // 스트리밍 응답 구독
-    this.chatService.sendStreamingMessage(id, req.user.userId, messageDto.content)
+    this.chatService
+      .sendStreamingMessage(id, req.user.userId, messageDto.content)
       .subscribe({
         next: (event: MessageEvent) => {
           res.write(`data: ${event.data}\n\n`);
         },
         error: (error) => {
-          res.write(`data: ${JSON.stringify({ type: 'error', message: error.message })}\n\n`);
+          res.write(
+            `data: ${JSON.stringify({ type: 'error', message: error.message })}\n\n`,
+          );
           res.end();
         },
         complete: () => {
@@ -170,4 +193,4 @@ export class ChatController {
         },
       });
   }
-} 
+}

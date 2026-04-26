@@ -16,7 +16,7 @@ cp .env.example .env
 #### AI API 키
 - **OpenAI**: [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 - **Claude (Anthropic)**: [https://console.anthropic.com/](https://console.anthropic.com/)
-- **Mistral AI**: [https://console.mistral.ai/](https://console.mistral.ai/)
+- **xAI (Grok)**: [https://console.x.ai/](https://console.x.ai/)
 
 #### Toss Payments
 - [Toss Payments 개발자센터](https://developers.tosspayments.com/)에서 API 키 발급
@@ -57,7 +57,7 @@ npm run start:prod
 
 서버 실행 후 Swagger 문서 확인:
 ```
-http://localhost:3000/api
+http://localhost:5001/api
 ```
 
 ## 4. 관리자 대시보드 사용법
@@ -65,7 +65,7 @@ http://localhost:3000/api
 ### 관리자 API 호출 예시
 ```bash
 curl -H "x-admin-token: YOUR_ADMIN_TOKEN" \
-  http://localhost:3000/admin/dashboard/stats
+  http://localhost:5001/admin/dashboard/stats
 ```
 
 ### 주요 관리자 API

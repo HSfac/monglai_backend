@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { AIModel } from '../characters/schemas/character.schema';
 import OpenAI from 'openai';
 import { Anthropic } from '@anthropic-ai/sdk';
+import axios from 'axios';
 
 @Injectable()
 export class AIService {
@@ -41,7 +42,7 @@ export class AIService {
 사용자와의 대화에서 위 특성을 반영하여 응답해주세요.`;
 
     // 이전 대화 기록 포맷팅
-    const formattedMessages = messages.map(msg => ({
+    const formattedMessages = messages.map((msg) => ({
       role: msg.sender === 'user' ? 'user' : 'assistant',
       content: msg.content,
     }));
@@ -69,11 +70,14 @@ export class AIService {
     }
   }
 
-  private async callGPT4(messages: any[]): Promise<{ content: string; tokensUsed: number }> {
+  private async callGPT4(
+    messages: any[],
+    temperature: number = 0.7,
+  ): Promise<{ content: string; tokensUsed: number }> {
     const response = await this.openai.chat.completions.create({
       model: 'gpt-4-turbo',
       messages,
-      temperature: 0.7,
+      temperature,
     });
 
     return {
@@ -82,9 +86,12 @@ export class AIService {
     };
   }
 
-  private async callClaude3(messages: any[]): Promise<{ content: string; tokensUsed: number }> {
+  private async callClaude3(
+    messages: any[],
+    temperature: number = 0.7,
+  ): Promise<{ content: string; tokensUsed: number }> {
     // Anthropic API 형식에 맞게 메시지 변환
-    const anthropicMessages = messages.map(msg => ({
+    const anthropicMessages = messages.map((msg) => ({
       role: msg.role === 'system' ? 'user' : msg.role,
       content: msg.content,
     }));
@@ -93,6 +100,7 @@ export class AIService {
       model: 'claude-3-opus-20240229',
       messages: anthropicMessages,
       max_tokens: 1000,
+      temperature,
     });
 
     // Claude 응답에서 텍스트 블록 추출
@@ -108,11 +116,14 @@ export class AIService {
     };
   }
 
-  private async callGrok(messages: any[]): Promise<{ content: string; tokensUsed: number }> {
+  private async callGrok(
+    messages: any[],
+    temperature: number = 0.7,
+  ): Promise<{ content: string; tokensUsed: number }> {
     const response = await this.grok.chat.completions.create({
       model: 'grok-beta',
       messages,
-      temperature: 0.7,
+      temperature,
     });
 
     return {
@@ -145,7 +156,7 @@ export class AIService {
 사용자와의 대화에서 위 특성을 반영하여 응답해주세요.`;
 
     // 이전 대화 기록 포맷팅
-    const formattedMessages = messages.map(msg => ({
+    const formattedMessages = messages.map((msg) => ({
       role: msg.sender === 'user' ? 'user' : 'assistant',
       content: msg.content,
     }));
@@ -179,11 +190,12 @@ export class AIService {
   private async streamGPT4(
     messages: any[],
     onChunk: (chunk: string) => void,
+    temperature: number = 0.7,
   ): Promise<{ totalTokensUsed: number }> {
     const stream = await this.openai.chat.completions.create({
       model: 'gpt-4-turbo',
       messages,
-      temperature: 0.7,
+      temperature,
       stream: true,
     });
 
@@ -210,9 +222,10 @@ export class AIService {
   private async streamClaude3(
     messages: any[],
     onChunk: (chunk: string) => void,
+    temperature: number = 0.7,
   ): Promise<{ totalTokensUsed: number }> {
     // Anthropic API 형식에 맞게 메시지 변환
-    const anthropicMessages = messages.map(msg => ({
+    const anthropicMessages = messages.map((msg) => ({
       role: msg.role === 'system' ? 'user' : msg.role,
       content: msg.content,
     }));
@@ -221,12 +234,16 @@ export class AIService {
       model: 'claude-3-opus-20240229',
       messages: anthropicMessages,
       max_tokens: 1000,
+      temperature,
     });
 
     let fullContent = '';
 
     for await (const chunk of stream) {
-      if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+      if (
+        chunk.type === 'content_block_delta' &&
+        chunk.delta.type === 'text_delta'
+      ) {
         const content = chunk.delta.text;
         fullContent += content;
         onChunk(content);
@@ -245,11 +262,12 @@ export class AIService {
   private async streamGrok(
     messages: any[],
     onChunk: (chunk: string) => void,
+    temperature: number = 0.7,
   ): Promise<{ totalTokensUsed: number }> {
     const stream = await this.grok.chat.completions.create({
       model: 'grok-beta',
       messages,
-      temperature: 0.7,
+      temperature,
       stream: true,
     });
 
@@ -277,6 +295,7 @@ export class AIService {
     aiModel: AIModel,
     systemPrompt: string,
     messages: Array<{ role: string; content: string }>,
+    temperature: number = 0.7,
   ): Promise<{ content: string; tokensUsed: number }> {
     const fullMessages = [
       { role: 'system', content: systemPrompt },
@@ -285,15 +304,15 @@ export class AIService {
 
     switch (aiModel) {
       case AIModel.GPT4:
-        return this.callGPT4(fullMessages);
+        return this.callGPT4(fullMessages, temperature);
       case AIModel.CLAUDE3:
-        return this.callClaude3(fullMessages);
+        return this.callClaude3(fullMessages, temperature);
       case AIModel.GROK:
-        return this.callGrok(fullMessages);
+        return this.callGrok(fullMessages, temperature);
       case AIModel.CUSTOM:
-        return this.callGPT4(fullMessages);
+        return this.callGPT4(fullMessages, temperature);
       default:
-        return this.callGPT4(fullMessages);
+        return this.callGPT4(fullMessages, temperature);
     }
   }
 
@@ -305,6 +324,7 @@ export class AIService {
     systemPrompt: string,
     messages: Array<{ role: string; content: string }>,
     onChunk: (chunk: string) => void,
+    temperature: number = 0.7,
   ): Promise<{ totalTokensUsed: number }> {
     const fullMessages = [
       { role: 'system', content: systemPrompt },
@@ -313,15 +333,15 @@ export class AIService {
 
     switch (aiModel) {
       case AIModel.GPT4:
-        return this.streamGPT4(fullMessages, onChunk);
+        return this.streamGPT4(fullMessages, onChunk, temperature);
       case AIModel.CLAUDE3:
-        return this.streamClaude3(fullMessages, onChunk);
+        return this.streamClaude3(fullMessages, onChunk, temperature);
       case AIModel.GROK:
-        return this.streamGrok(fullMessages, onChunk);
+        return this.streamGrok(fullMessages, onChunk, temperature);
       case AIModel.CUSTOM:
-        return this.streamGPT4(fullMessages, onChunk);
+        return this.streamGPT4(fullMessages, onChunk, temperature);
       default:
-        return this.streamGPT4(fullMessages, onChunk);
+        return this.streamGPT4(fullMessages, onChunk, temperature);
     }
   }
 
@@ -366,6 +386,18 @@ export class AIService {
 }`;
 
     try {
+      // 로컬 URL이면 base64로 변환 (OpenAI는 localhost 접근 불가)
+      let imageContent: { type: 'image_url'; image_url: { url: string; detail: 'high' } };
+      const isLocalUrl = imageUrl.includes('localhost') || imageUrl.includes('127.0.0.1');
+      if (isLocalUrl) {
+        const response = await axios.get(imageUrl, { responseType: 'arraybuffer', timeout: 10000 });
+        const mimeType = (response.headers['content-type'] as string) || 'image/png';
+        const base64 = Buffer.from(response.data).toString('base64');
+        imageContent = { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64}`, detail: 'high' } };
+      } else {
+        imageContent = { type: 'image_url', image_url: { url: imageUrl, detail: 'high' } };
+      }
+
       const response = await this.openai.chat.completions.create({
         model: 'gpt-4o',
         messages: [
@@ -380,13 +412,7 @@ export class AIService {
                 type: 'text',
                 text: '이 이미지의 캐릭터를 분석해주세요.',
               },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: imageUrl,
-                  detail: 'high',
-                },
-              },
+              imageContent,
             ],
           },
         ],
@@ -579,7 +605,8 @@ JSON 배열 형식으로만 출력하세요. 예: ["판타지", "친절함", "�
         messages: [
           {
             role: 'system',
-            content: '당신은 AI 캐릭터 생성을 도와주는 전문가입니다. 요청된 내용만 간결하게 출력해주세요.',
+            content:
+              '당신은 AI 캐릭터 생성을 도와주는 전문가입니다. 요청된 내용만 간결하게 출력해주세요.',
           },
           {
             role: 'user',
@@ -593,7 +620,12 @@ JSON 배열 형식으로만 출력하세요. 예: ["판타지", "친절함", "�
       const content = response.choices[0].message.content?.trim() || '';
 
       // 배열 필드인 경우 JSON 파싱
-      const arrayFields = ['personalityCore', 'characterLikes', 'characterDislikes', 'tags'];
+      const arrayFields = [
+        'personalityCore',
+        'characterLikes',
+        'characterDislikes',
+        'tags',
+      ];
       if (arrayFields.includes(fieldName)) {
         try {
           // JSON 배열 추출
@@ -602,9 +634,15 @@ JSON 배열 형식으로만 출력하세요. 예: ["판타지", "친절함", "�
             return JSON.parse(jsonMatch[0]);
           }
           // 쉼표로 구분된 형식 처리
-          return content.split(',').map(item => item.trim().replace(/["\[\]]/g, '')).filter(item => item);
+          return content
+            .split(',')
+            .map((item) => item.trim().replace(/["\[\]]/g, ''))
+            .filter((item) => item);
         } catch {
-          return content.split(',').map(item => item.trim()).filter(item => item);
+          return content
+            .split(',')
+            .map((item) => item.trim())
+            .filter((item) => item);
         }
       }
 
@@ -614,4 +652,4 @@ JSON 배열 형식으로만 출력하세요. 예: ["판타지", "친절함", "�
       throw error;
     }
   }
-} 
+}

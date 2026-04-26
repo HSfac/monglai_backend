@@ -2,14 +2,14 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 
 export enum CouponType {
-  TOKENS = 'tokens',           // 토큰 지급
-  DISCOUNT = 'discount',       // 할인율
+  TOKENS = 'tokens', // 토큰 지급
+  DISCOUNT = 'discount', // 할인율
   SUBSCRIPTION = 'subscription', // 구독 기간
 }
 
 export enum DiscountType {
-  PERCENTAGE = 'percentage',   // 퍼센트 할인
-  FIXED = 'fixed',             // 고정 금액 할인
+  PERCENTAGE = 'percentage', // 퍼센트 할인
+  FIXED = 'fixed', // 고정 금액 할인
 }
 
 @Schema({ timestamps: true })
@@ -56,7 +56,10 @@ export class Coupon extends Document {
   @Prop({ default: 1 })
   maxUsagePerUser: number; // 유저당 최대 사용 횟수
 
-  @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }], default: [] })
+  @Prop({
+    type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }],
+    default: [],
+  })
   usedBy: MongooseSchema.Types.ObjectId[];
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User' })

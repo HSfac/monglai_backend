@@ -21,7 +21,10 @@ export class EmailService {
     });
   }
 
-  async sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
+  async sendPasswordResetEmail(
+    email: string,
+    resetToken: string,
+  ): Promise<void> {
     const mailOptions = {
       from: this.configService.get<string>('EMAIL_FROM'),
       to: email,

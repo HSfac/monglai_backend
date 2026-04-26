@@ -9,6 +9,7 @@ import { PassVerificationService } from './services/pass-verification.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { KakaoStrategy } from './strategies/kakao.strategy';
+import { AdminAuthGuard } from './guards/admin-auth.guard';
 import { UsersModule } from '../users/users.module';
 
 @Module({
@@ -28,7 +29,15 @@ import { UsersModule } from '../users/users.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, EmailService, PassVerificationService, JwtStrategy, GoogleStrategy, KakaoStrategy],
-  exports: [AuthService, PassVerificationService],
+  providers: [
+    AuthService,
+    EmailService,
+    PassVerificationService,
+    JwtStrategy,
+    GoogleStrategy,
+    KakaoStrategy,
+    AdminAuthGuard,
+  ],
+  exports: [AuthService, PassVerificationService, AdminAuthGuard, JwtModule],
 })
-export class AuthModule {} 
+export class AuthModule {}

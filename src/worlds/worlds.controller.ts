@@ -50,11 +50,7 @@ export class WorldsController {
     @Query('tags') tags?: string | string[],
     @Query('search') search?: string,
   ) {
-    const tagsArray = tags
-      ? Array.isArray(tags)
-        ? tags
-        : [tags]
-      : undefined;
+    const tagsArray = tags ? (Array.isArray(tags) ? tags : [tags]) : undefined;
 
     return this.worldsService.findAll({
       page: page ? Number(page) : 1,

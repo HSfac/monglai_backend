@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { PersonaPreset, PersonaPresetSchema } from './schemas/persona-preset.schema';
+import {
+  PersonaPreset,
+  PersonaPresetSchema,
+} from './schemas/persona-preset.schema';
 import { PersonaPresetsController } from './persona-presets.controller';
 import { PersonaPresetsService } from './persona-presets.service';
 

@@ -4,8 +4,8 @@ import { AIModel } from '../../characters/schemas/character.schema';
 
 // 채팅 모드 enum
 export enum ChatMode {
-  STORY = 'story',           // 스토리 모드 (긴 서사, 묘사 비중 높음)
-  CHAT = 'chat',             // 라이트 채팅 모드 (짧은 문장, 일상 대화)
+  STORY = 'story', // 스토리 모드 (긴 서사, 묘사 비중 높음)
+  CHAT = 'chat', // 라이트 채팅 모드 (짧은 문장, 일상 대화)
   CREATOR_DEBUG = 'creator_debug', // 크리에이터 디버그 모드
 }
 
@@ -46,16 +46,27 @@ export class EmbeddedSessionState {
 
   @Prop()
   lastSceneSummary: string;
+
+  @Prop({ type: [String], default: [] })
+  activeFlags: string[];
+
+  @Prop({ default: '' })
+  currentObjective: string;
 }
 
-export const EmbeddedSessionStateSchema = SchemaFactory.createForClass(EmbeddedSessionState);
+export const EmbeddedSessionStateSchema =
+  SchemaFactory.createForClass(EmbeddedSessionState);
 
 @Schema({ timestamps: true })
 export class Chat extends Document {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
   user: MongooseSchema.Types.ObjectId;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Character', required: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'Character',
+    required: true,
+  })
   character: MongooseSchema.Types.ObjectId;
 
   @Prop({ enum: AIModel, required: true })
@@ -93,4 +104,4 @@ export const ChatSchema = SchemaFactory.createForClass(Chat);
 // 인덱스 설정
 ChatSchema.index({ user: 1, lastActivity: -1 });
 ChatSchema.index({ character: 1 });
-ChatSchema.index({ presetId: 1 }); 
+ChatSchema.index({ presetId: 1 });

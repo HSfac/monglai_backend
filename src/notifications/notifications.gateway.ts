@@ -17,7 +17,9 @@ import { NotificationsService } from './notifications.service';
   },
   namespace: 'notifications',
 })
-export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class NotificationsGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
@@ -32,7 +34,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
   async handleConnection(client: Socket) {
     try {
-      const token = client.handshake.auth.token || client.handshake.headers.authorization?.split(' ')[1];
+      const token =
+        client.handshake.auth.token ||
+        client.handshake.headers.authorization?.split(' ')[1];
 
       if (!token) {
         this.logger.warn(`Connection rejected: No token provided`);
@@ -60,7 +64,8 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       this.logger.log(`Client connected: ${client.id} (User: ${userId})`);
 
       // 연결 시 읽지 않은 알림 개수 전송
-      const unreadCount = await this.notificationsService.getUnreadCount(userId);
+      const unreadCount =
+        await this.notificationsService.getUnreadCount(userId);
       client.emit('unreadCount', { count: unreadCount });
     } catch (error) {
       this.logger.error('Connection authentication failed:', error);
@@ -73,7 +78,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
     if (userId) {
       const sockets = this.userSockets.get(userId) || [];
-      const filteredSockets = sockets.filter((socketId) => socketId !== client.id);
+      const filteredSockets = sockets.filter(
+        (socketId) => socketId !== client.id,
+      );
 
       if (filteredSockets.length === 0) {
         this.userSockets.delete(userId);
@@ -86,7 +93,10 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   }
 
   @SubscribeMessage('getNotifications')
-  async handleGetNotifications(client: Socket, data: { page?: number; limit?: number }) {
+  async handleGetNotifications(
+    client: Socket,
+    data: { page?: number; limit?: number },
+  ) {
     const userId = client.data.userId;
 
     if (!userId) {
@@ -94,7 +104,11 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     }
 
     const { page = 1, limit = 20 } = data;
-    const result = await this.notificationsService.findByUserPaginated(userId, page, limit);
+    const result = await this.notificationsService.findByUserPaginated(
+      userId,
+      page,
+      limit,
+    );
 
     return result;
   }
@@ -144,12 +158,15 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       });
 
       // 읽지 않은 개수 업데이트
-      const unreadCount = await this.notificationsService.getUnreadCount(userId);
+      const unreadCount =
+        await this.notificationsService.getUnreadCount(userId);
       socketIds.forEach((socketId) => {
         this.server.to(socketId).emit('unreadCount', { count: unreadCount });
       });
 
-      this.logger.log(`Notification sent to user ${userId} (${socketIds.length} connections)`);
+      this.logger.log(
+        `Notification sent to user ${userId} (${socketIds.length} connections)`,
+      );
     }
   }
 

@@ -8,20 +8,20 @@ export enum ReportType {
 }
 
 export enum ReportReason {
-  INAPPROPRIATE = 'inappropriate',     // 부적절한 콘텐츠
-  SPAM = 'spam',                       // 스팸
-  HARASSMENT = 'harassment',           // 괴롭힘
-  COPYRIGHT = 'copyright',             // 저작권 침해
-  ADULT_CONTENT = 'adult_content',     // 성인 콘텐츠
-  VIOLENCE = 'violence',               // 폭력적 콘텐츠
-  OTHER = 'other',                     // 기타
+  INAPPROPRIATE = 'inappropriate', // 부적절한 콘텐츠
+  SPAM = 'spam', // 스팸
+  HARASSMENT = 'harassment', // 괴롭힘
+  COPYRIGHT = 'copyright', // 저작권 침해
+  ADULT_CONTENT = 'adult_content', // 성인 콘텐츠
+  VIOLENCE = 'violence', // 폭력적 콘텐츠
+  OTHER = 'other', // 기타
 }
 
 export enum ReportStatus {
-  PENDING = 'pending',       // 대기중
-  REVIEWING = 'reviewing',   // 검토중
-  RESOLVED = 'resolved',     // 처리완료
-  REJECTED = 'rejected',     // 반려
+  PENDING = 'pending', // 대기중
+  REVIEWING = 'reviewing', // 검토중
+  RESOLVED = 'resolved', // 처리완료
+  REJECTED = 'rejected', // 반려
 }
 
 @Schema({ timestamps: true })

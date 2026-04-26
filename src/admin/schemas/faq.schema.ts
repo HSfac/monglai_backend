@@ -2,13 +2,13 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 
 export enum FAQCategory {
-  GENERAL = 'general',         // 일반
-  ACCOUNT = 'account',         // 계정
-  PAYMENT = 'payment',         // 결제
-  CHARACTER = 'character',     // 캐릭터
-  CREATOR = 'creator',         // 크리에이터
+  GENERAL = 'general', // 일반
+  ACCOUNT = 'account', // 계정
+  PAYMENT = 'payment', // 결제
+  CHARACTER = 'character', // 캐릭터
+  CREATOR = 'creator', // 크리에이터
   SUBSCRIPTION = 'subscription', // 구독
-  TECHNICAL = 'technical',     // 기술 지원
+  TECHNICAL = 'technical', // 기술 지원
 }
 
 @Schema({ timestamps: true })

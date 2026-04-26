@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Put, Delete, Query, Param, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Query,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { AdminAuthGuard } from '../auth/guards/admin-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
@@ -59,6 +69,16 @@ export class AdminController {
     return this.adminService.toggleUserBlock(id);
   }
 
+  @Put('users/:id/tokens')
+  @ApiOperation({ summary: '사용자 토큰 조정' })
+  @ApiResponse({ status: 200, description: '토큰 조정 성공' })
+  async adjustUserTokens(
+    @Param('id') id: string,
+    @Body() body: { amount: number; reason?: string },
+  ) {
+    return this.adminService.adjustUserTokens(id, body.amount, body.reason);
+  }
+
   // ==================== 캐릭터 관리 ====================
 
   @Get('characters')
@@ -98,14 +118,19 @@ export class AdminController {
   @Get('payments')
   @ApiOperation({ summary: '결제 내역 조회' })
   @ApiResponse({ status: 200, description: '결제 내역 조회 성공' })
-  async getPayments(@Query('page') page: number = 1, @Query('limit') limit: number = 50) {
+  async getPayments(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 50,
+  ) {
     return this.adminService.getPayments(Number(page), Number(limit));
   }
 
   @Get('revenue/stats')
   @ApiOperation({ summary: '매출 통계 조회' })
   @ApiResponse({ status: 200, description: '매출 통계 조회 성공' })
-  async getRevenueStats(@Query('period') period: 'daily' | 'monthly' = 'daily') {
+  async getRevenueStats(
+    @Query('period') period: 'daily' | 'monthly' = 'daily',
+  ) {
     return this.adminService.getRevenueStats(period);
   }
 
@@ -184,8 +209,13 @@ export class AdminController {
     @Query('limit') limit: number = 20,
     @Query('isActive') isActive?: string,
   ) {
-    const active = isActive === 'true' ? true : isActive === 'false' ? false : undefined;
-    return this.adminService.getAnnouncements(Number(page), Number(limit), active);
+    const active =
+      isActive === 'true' ? true : isActive === 'false' ? false : undefined;
+    return this.adminService.getAnnouncements(
+      Number(page),
+      Number(limit),
+      active,
+    );
   }
 
   @Post('announcements')
@@ -219,7 +249,8 @@ export class AdminController {
     @Query('limit') limit: number = 20,
     @Query('isActive') isActive?: string,
   ) {
-    const active = isActive === 'true' ? true : isActive === 'false' ? false : undefined;
+    const active =
+      isActive === 'true' ? true : isActive === 'false' ? false : undefined;
     return this.adminService.getCoupons(Number(page), Number(limit), active);
   }
 
@@ -261,7 +292,11 @@ export class AdminController {
     @Query('limit') limit: number = 20,
     @Query('status') status?: string,
   ) {
-    return this.adminService.getSettlements(Number(page), Number(limit), status);
+    return this.adminService.getSettlements(
+      Number(page),
+      Number(limit),
+      status,
+    );
   }
 
   @Put('settlements/:id/process')
@@ -273,7 +308,13 @@ export class AdminController {
     @Body('adminNote') adminNote?: string,
     @Body('transactionId') transactionId?: string,
   ) {
-    return this.adminService.processSettlement(id, status, 'admin', adminNote, transactionId);
+    return this.adminService.processSettlement(
+      id,
+      status,
+      'admin',
+      adminNote,
+      transactionId,
+    );
   }
 
   @Get('creators/:id/earnings')
@@ -284,7 +325,11 @@ export class AdminController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 50,
   ) {
-    return this.adminService.getCreatorEarnings(id, Number(page), Number(limit));
+    return this.adminService.getCreatorEarnings(
+      id,
+      Number(page),
+      Number(limit),
+    );
   }
 
   // ==================== FAQ 관리 ====================

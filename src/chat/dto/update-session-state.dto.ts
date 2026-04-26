@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  Min,
+  Max,
+  IsArray,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateSessionStateDto {
@@ -49,4 +56,22 @@ export class UpdateSessionStateDto {
   @IsString()
   @IsOptional()
   lastSceneSummary?: string;
+
+  @ApiPropertyOptional({
+    description: '현재 활성화된 플래그들',
+    example: ['첫대화완료', '비밀공유'],
+    type: [String],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  activeFlags?: string[];
+
+  @ApiPropertyOptional({
+    description: '현재 목표/전개 방향',
+    example: '조금 더 편하게 대화를 이어간다.',
+  })
+  @IsString()
+  @IsOptional()
+  currentObjective?: string;
 }

@@ -3,7 +3,12 @@ import { Document, Schema as MongooseSchema } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class SessionState extends Document {
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Chat', required: true, unique: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'Chat',
+    required: true,
+    unique: true,
+  })
   chatId: MongooseSchema.Types.ObjectId;
 
   @Prop({ default: '평온' })

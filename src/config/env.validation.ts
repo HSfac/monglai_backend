@@ -1,5 +1,11 @@
 import { plainToClass } from 'class-transformer';
-import { IsString, IsNotEmpty, IsNumber, validateSync, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  validateSync,
+  IsOptional,
+} from 'class-validator';
 
 /**
  * 환경변수 검증 클래스
@@ -19,6 +25,10 @@ class EnvironmentVariables {
   @IsString()
   @IsOptional()
   JWT_EXPIRATION?: string;
+
+  @IsString()
+  @IsOptional()
+  JWT_EXPIRES_IN?: string;
 
   // AI API Keys
   @IsString()
@@ -59,7 +69,15 @@ class EnvironmentVariables {
   @IsOptional()
   TOSS_PAYMENTS_CLIENT_KEY?: string;
 
-  // NICE 본인인증
+  @IsString()
+  @IsOptional()
+  TOSS_PAYMENT_SECRET_KEY?: string;
+
+  @IsString()
+  @IsOptional()
+  TOSS_BILLING_SECRET_KEY?: string;
+
+  // 레거시 NICE 본인인증
   @IsString()
   @IsOptional()
   NICE_SITE_CODE?: string;
@@ -71,6 +89,19 @@ class EnvironmentVariables {
   @IsString()
   @IsOptional()
   NICE_RETURN_URL?: string;
+
+  // NHN KCP 본인인증
+  @IsString()
+  @IsOptional()
+  KCP_SITE_CODE?: string;
+
+  @IsString()
+  @IsOptional()
+  KCP_SITE_PW?: string;
+
+  @IsString()
+  @IsOptional()
+  KCP_MODULE_PATH?: string;
 
   // Server
   @IsString()
@@ -85,6 +116,10 @@ class EnvironmentVariables {
   @IsString()
   @IsOptional()
   FRONTEND_URL?: string;
+
+  @IsString()
+  @IsOptional()
+  BACKEND_URL?: string;
 }
 
 /**
@@ -110,7 +145,7 @@ export function validate(config: Record<string, unknown>) {
 
     throw new Error(
       `❌ 환경변수 검증 실패:\n${errorMessages.join('\n')}\n\n` +
-        `💡 .env 파일을 확인하거나 .env.example을 참고하세요.`
+        `💡 .env 파일을 확인하거나 .env.example을 참고하세요.`,
     );
   }
 

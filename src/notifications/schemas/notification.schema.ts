@@ -6,6 +6,7 @@ export enum NotificationType {
   SUCCESS = 'success',
   WARNING = 'warning',
   ERROR = 'error',
+  CREATOR_UPDATE = 'creator_update',
 }
 
 @Schema({ timestamps: true })
@@ -29,4 +30,4 @@ export class Notification extends Document {
   link: string;
 }
 
-export const NotificationSchema = SchemaFactory.createForClass(Notification); 
+export const NotificationSchema = SchemaFactory.createForClass(Notification);

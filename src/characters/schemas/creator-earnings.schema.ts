@@ -6,7 +6,11 @@ export class CreatorEarnings extends Document {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
   creator: MongooseSchema.Types.ObjectId;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Character', required: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'Character',
+    required: true,
+  })
   character: MongooseSchema.Types.ObjectId;
 
   @Prop({ required: true })
@@ -25,4 +29,5 @@ export class CreatorEarnings extends Document {
   paidAt: Date;
 }
 
-export const CreatorEarningsSchema = SchemaFactory.createForClass(CreatorEarnings);
+export const CreatorEarningsSchema =
+  SchemaFactory.createForClass(CreatorEarnings);

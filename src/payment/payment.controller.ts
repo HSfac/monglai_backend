@@ -1,7 +1,21 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+  Query,
+} from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 @ApiTags('결제')
 @Controller('payment')
@@ -95,7 +109,10 @@ export class PaymentController {
   @ApiOperation({ summary: '빌링키 발급 (구독용 카드 등록)' })
   @ApiResponse({ status: 201, description: '빌링키 발급 성공' })
   async issueBillingKey(@Request() req, @Body() issueDto: { authKey: string }) {
-    return this.paymentService.issueBillingKey(req.user.userId, issueDto.authKey);
+    return this.paymentService.issueBillingKey(
+      req.user.userId,
+      issueDto.authKey,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -103,8 +120,14 @@ export class PaymentController {
   @ApiBearerAuth()
   @ApiOperation({ summary: '구독 시작 (빌링키로 자동 결제)' })
   @ApiResponse({ status: 201, description: '구독 시작 성공' })
-  async startSubscription(@Request() req, @Body() subscribeDto: { planType: string }) {
-    return this.paymentService.startSubscription(req.user.userId, subscribeDto.planType);
+  async startSubscription(
+    @Request() req,
+    @Body() subscribeDto: { planType: string },
+  ) {
+    return this.paymentService.startSubscription(
+      req.user.userId,
+      subscribeDto.planType,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -124,4 +147,32 @@ export class PaymentController {
   async getSubscriptionStatus(@Request() req) {
     return this.paymentService.getSubscriptionStatus(req.user.userId);
   }
-} 
+
+  // ==================== 쿠폰 API ====================
+
+  @Get('coupon/validate')
+  @ApiOperation({ summary: '쿠폰 유효성 검사' })
+  @ApiResponse({ status: 200, description: '쿠폰 유효성 검사 성공' })
+  @ApiResponse({ status: 404, description: '존재하지 않는 쿠폰' })
+  @ApiResponse({ status: 400, description: '유효하지 않은 쿠폰' })
+  async validateCoupon(@Query('code') code: string) {
+    return this.paymentService.validateCoupon(code);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('coupon/apply')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '쿠폰 적용' })
+  @ApiResponse({ status: 200, description: '쿠폰 적용 성공' })
+  @ApiResponse({ status: 404, description: '존재하지 않는 쿠폰' })
+  @ApiResponse({
+    status: 400,
+    description: '유효하지 않은 쿠폰 또는 이미 사용한 쿠폰',
+  })
+  async applyCoupon(@Request() req, @Body() applyCouponDto: { code: string }) {
+    return this.paymentService.applyCoupon(
+      req.user.userId,
+      applyCouponDto.code,
+    );
+  }
+}

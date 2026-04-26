@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { MemorySummary } from './schemas/memory-summary.schema';
+import { MemorySummary, MemoryType } from './schemas/memory-summary.schema';
 import { UserNote, NoteTargetType } from './schemas/user-note.schema';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
@@ -13,7 +13,8 @@ import { UpdateNoteDto } from './dto/update-note.dto';
 @Injectable()
 export class MemoryService {
   constructor(
-    @InjectModel(MemorySummary.name) private memorySummaryModel: Model<MemorySummary>,
+    @InjectModel(MemorySummary.name)
+    private memorySummaryModel: Model<MemorySummary>,
     @InjectModel(UserNote.name) private userNoteModel: Model<UserNote>,
   ) {}
 
@@ -23,6 +24,8 @@ export class MemoryService {
     sessionId: string;
     messageRange: { start: number; end: number };
     summaryText: string;
+    memoryType?: MemoryType;
+    eventCategory?: string;
     keyEvents?: string[];
     emotionalTone?: string;
     importantFacts?: string[];
@@ -31,6 +34,8 @@ export class MemoryService {
       sessionId: new Types.ObjectId(data.sessionId),
       messageRange: data.messageRange,
       summaryText: data.summaryText,
+      memoryType: data.memoryType || MemoryType.SUMMARY,
+      eventCategory: data.eventCategory,
       keyEvents: data.keyEvents || [],
       emotionalTone: data.emotionalTone,
       importantFacts: data.importantFacts || [],
@@ -50,9 +55,14 @@ export class MemoryService {
       .exec();
   }
 
-  async getLatestMemorySummary(sessionId: string): Promise<MemorySummary | null> {
+  async getLatestMemorySummary(
+    sessionId: string,
+  ): Promise<MemorySummary | null> {
     return this.memorySummaryModel
-      .findOne({ sessionId: new Types.ObjectId(sessionId) })
+      .findOne({
+        sessionId: new Types.ObjectId(sessionId),
+        memoryType: { $ne: MemoryType.EVENT },
+      })
       .sort({ createdAt: -1 })
       .exec();
   }
@@ -78,7 +88,10 @@ export class MemoryService {
     return note.save();
   }
 
-  async getNotesBySession(sessionId: string, userId: string): Promise<UserNote[]> {
+  async getNotesBySession(
+    sessionId: string,
+    userId: string,
+  ): Promise<UserNote[]> {
     return this.userNoteModel
       .find({
         userId: new Types.ObjectId(userId),
@@ -89,7 +102,10 @@ export class MemoryService {
       .exec();
   }
 
-  async getNotesByCharacter(characterId: string, userId: string): Promise<UserNote[]> {
+  async getNotesByCharacter(
+    characterId: string,
+    userId: string,
+  ): Promise<UserNote[]> {
     return this.userNoteModel
       .find({
         userId: new Types.ObjectId(userId),
@@ -110,8 +126,14 @@ export class MemoryService {
         userId: new Types.ObjectId(userId),
         includeInContext: true,
         $or: [
-          { targetType: NoteTargetType.SESSION, targetId: new Types.ObjectId(sessionId) },
-          { targetType: NoteTargetType.CHARACTER, targetId: new Types.ObjectId(characterId) },
+          {
+            targetType: NoteTargetType.SESSION,
+            targetId: new Types.ObjectId(sessionId),
+          },
+          {
+            targetType: NoteTargetType.CHARACTER,
+            targetId: new Types.ObjectId(characterId),
+          },
         ],
       })
       .sort({ isPinned: -1, createdAt: -1 })
@@ -195,16 +217,28 @@ export class MemoryService {
 
   async getMemoryStatsForSession(sessionId: string): Promise<{
     summaryCount: number;
+    eventCount: number;
     latestSummaryRange: { start: number; end: number } | null;
+    latestEventRange: { start: number; end: number } | null;
   }> {
-    const summaries = await this.memorySummaryModel
+    const memories = await this.memorySummaryModel
       .find({ sessionId: new Types.ObjectId(sessionId) })
       .sort({ createdAt: -1 })
       .exec();
 
+    const summaries = memories.filter(
+      (memory) => memory.memoryType !== MemoryType.EVENT,
+    );
+    const events = memories.filter(
+      (memory) => memory.memoryType === MemoryType.EVENT,
+    );
+
     return {
       summaryCount: summaries.length,
-      latestSummaryRange: summaries.length > 0 ? summaries[0].messageRange : null,
+      eventCount: events.length,
+      latestSummaryRange:
+        summaries.length > 0 ? summaries[0].messageRange : null,
+      latestEventRange: events.length > 0 ? events[0].messageRange : null,
     };
   }
 }

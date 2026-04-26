@@ -68,19 +68,21 @@ export class ContentFilterService {
    * Leetspeak, 공백, 특수문자 제거
    */
   private normalizeText(text: string): string {
-    return text
-      // Unicode 정규화 (동형 문자 방지)
-      .normalize('NFKC')
-      // Leetspeak 정규화
-      .replace(/[4@]/gi, 'a')
-      .replace(/[3]/g, 'e')
-      .replace(/[1!]/gi, 'i')
-      .replace(/[0]/g, 'o')
-      .replace(/[$5]/g, 's')
-      .replace(/[7]/g, 't')
-      // 과도한 공백 제거
-      .replace(/\s+/g, ' ')
-      .trim();
+    return (
+      text
+        // Unicode 정규화 (동형 문자 방지)
+        .normalize('NFKC')
+        // Leetspeak 정규화
+        .replace(/[4@]/gi, 'a')
+        .replace(/[3]/g, 'e')
+        .replace(/[1!]/gi, 'i')
+        .replace(/[0]/g, 'o')
+        .replace(/[$5]/g, 's')
+        .replace(/[7]/g, 't')
+        // 과도한 공백 제거
+        .replace(/\s+/g, ' ')
+        .trim()
+    );
   }
 
   /**
@@ -171,7 +173,11 @@ export class ContentFilterService {
       // 성인인증 사용자 처리
       if (isAdultVerified) {
         // 성인은 성적 콘텐츠 허용, 나머지는 차단
-        const { sexual, 'sexual/minors': sexualMinors, ...otherCategories } = aiCheck.categories;
+        const {
+          sexual,
+          'sexual/minors': sexualMinors,
+          ...otherCategories
+        } = aiCheck.categories;
 
         // 미성년자 관련 콘텐츠는 무조건 차단
         if (sexualMinors) {
@@ -183,7 +189,9 @@ export class ContentFilterService {
         }
 
         // 나머지 위험 카테고리 체크 (폭력, 혐오, 자해 등)
-        const hasOtherViolations = Object.values(otherCategories).some(v => v === true);
+        const hasOtherViolations = Object.values(otherCategories).some(
+          (v) => v === true,
+        );
         if (hasOtherViolations) {
           return {
             isInappropriate: true,
@@ -261,7 +269,9 @@ export class ContentFilterService {
   private maskSuspiciousContent(text: string): string {
     let maskedText = text;
     for (const pattern of this.suspiciousPatterns) {
-      maskedText = maskedText.replace(pattern, (match) => '*'.repeat(match.length));
+      maskedText = maskedText.replace(pattern, (match) =>
+        '*'.repeat(match.length),
+      );
     }
     return maskedText;
   }
@@ -291,11 +301,13 @@ export class ContentFilterService {
     return false;
   }
 
-
   /**
    * 개인정보 패턴 감지 (전화번호, 이메일 등)
    */
-  detectPersonalInfo(text: string): { hasPersonalInfo: boolean; types: string[] } {
+  detectPersonalInfo(text: string): {
+    hasPersonalInfo: boolean;
+    types: string[];
+  } {
     const patterns = {
       phone: /(\d{3}[-.]?\d{3,4}[-.]?\d{4})/g,
       email: /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/g,

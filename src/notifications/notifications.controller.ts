@@ -1,7 +1,22 @@
-import { Controller, Get, Patch, Param, UseGuards, Request, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Param,
+  UseGuards,
+  Request,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 
 @ApiTags('알림')
 @Controller('notifications')
@@ -13,8 +28,16 @@ export class NotificationsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: '사용자 알림 목록 조회 (페이지네이션)' })
   @ApiResponse({ status: 200, description: '알림 목록 조회 성공' })
-  @ApiQuery({ name: 'page', required: false, description: '페이지 번호 (기본값: 1)' })
-  @ApiQuery({ name: 'limit', required: false, description: '페이지당 개수 (기본값: 20)' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: '페이지 번호 (기본값: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: '페이지당 개수 (기본값: 20)',
+  })
   async getNotifications(
     @Request() req,
     @Query('page') page?: string,
@@ -22,7 +45,11 @@ export class NotificationsController {
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 20;
-    return this.notificationsService.findByUserPaginated(req.user.userId, pageNum, limitNum);
+    return this.notificationsService.findByUserPaginated(
+      req.user.userId,
+      pageNum,
+      limitNum,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -31,7 +58,9 @@ export class NotificationsController {
   @ApiOperation({ summary: '읽지 않은 알림 개수 조회' })
   @ApiResponse({ status: 200, description: '읽지 않은 알림 개수 조회 성공' })
   async getUnreadCount(@Request() req) {
-    const count = await this.notificationsService.getUnreadCount(req.user.userId);
+    const count = await this.notificationsService.getUnreadCount(
+      req.user.userId,
+    );
     return { count };
   }
 
@@ -73,4 +102,4 @@ export class NotificationsController {
     await this.notificationsService.deleteAll(req.user.userId);
     return { message: '모든 알림이 삭제되었습니다.' };
   }
-} 
+}

@@ -2,10 +2,10 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 
 export enum ImageAssetType {
-  PROFILE = 'profile',       // 캐릭터 프로필 이미지
+  PROFILE = 'profile', // 캐릭터 프로필 이미지
   ILLUSTRATION = 'illustration', // 일러스트
   BACKGROUND = 'background', // 배경 이미지
-  PRESET = 'preset',         // 프리셋 대표 이미지
+  PRESET = 'preset', // 프리셋 대표 이미지
   WORLD_COVER = 'world_cover', // 세계관 커버
   OTHER = 'other',
 }

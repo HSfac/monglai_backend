@@ -9,7 +9,10 @@ export class AppController {
 
   @Get()
   @ApiOperation({ summary: 'API 상태 확인' })
-  @ApiResponse({ status: 200, description: 'API 서버가 정상적으로 동작 중입니다.' })
+  @ApiResponse({
+    status: 200,
+    description: 'API 서버가 정상적으로 동작 중입니다.',
+  })
   getHello(): string {
     return this.appService.getHello();
   }
@@ -23,4 +26,4 @@ export class AppController {
       timestamp: new Date().toISOString(),
     };
   }
-} 
+}

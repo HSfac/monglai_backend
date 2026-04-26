@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UploadController } from './upload.controller';
 import { UploadService } from './upload.service';
 import { S3Service } from './s3.service';
+import { LocalStorageService } from './local-storage.service';
 import { ImageFilterService } from './image-filter.service';
 import { ImageAssetController } from './image-asset.controller';
 import { ImageAssetService } from './image-asset.service';
 import { ImageAsset, ImageAssetSchema } from './schemas/image-asset.schema';
+import { STORAGE_PROVIDER_TOKEN } from './storage.interface';
 
 @Module({
   imports: [
@@ -17,7 +19,21 @@ import { ImageAsset, ImageAssetSchema } from './schemas/image-asset.schema';
     ]),
   ],
   controllers: [UploadController, ImageAssetController],
-  providers: [UploadService, S3Service, ImageFilterService, ImageAssetService],
-  exports: [UploadService, ImageFilterService, ImageAssetService],
+  providers: [
+    S3Service,
+    LocalStorageService,
+    ImageFilterService,
+    ImageAssetService,
+    {
+      provide: STORAGE_PROVIDER_TOKEN,
+      useFactory: (config: ConfigService, s3: S3Service, local: LocalStorageService) => {
+        const provider = config.get<string>('STORAGE_PROVIDER') || 's3';
+        return provider === 'local' ? local : s3;
+      },
+      inject: [ConfigService, S3Service, LocalStorageService],
+    },
+    UploadService,
+  ],
+  exports: [UploadService, ImageFilterService, ImageAssetService, STORAGE_PROVIDER_TOKEN],
 })
-export class UploadModule {} 
+export class UploadModule {}

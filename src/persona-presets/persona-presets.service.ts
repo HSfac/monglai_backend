@@ -55,7 +55,9 @@ export class PersonaPresetsService {
     return preset;
   }
 
-  async findDefaultByCharacter(characterId: string): Promise<PersonaPreset | null> {
+  async findDefaultByCharacter(
+    characterId: string,
+  ): Promise<PersonaPreset | null> {
     return this.presetModel
       .findOne({
         characterId: new Types.ObjectId(characterId),

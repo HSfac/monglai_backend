@@ -9,13 +9,29 @@ import { PaymentModule } from '../payment/payment.module';
 import { ChatModule } from '../chat/chat.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from '../users/schemas/user.schema';
-import { Character, CharacterSchema } from '../characters/schemas/character.schema';
+import {
+  Character,
+  CharacterSchema,
+} from '../characters/schemas/character.schema';
 import { Payment, PaymentSchema } from '../payment/schemas/payment.schema';
 import { Chat, ChatSchema } from '../chat/schemas/chat.schema';
 import { Report, ReportSchema } from './schemas/report.schema';
-import { Announcement, AnnouncementSchema } from './schemas/announcement.schema';
-import { Coupon, CouponSchema, CouponUsage, CouponUsageSchema } from './schemas/coupon.schema';
-import { Settlement, SettlementSchema, CreatorEarning, CreatorEarningSchema } from './schemas/settlement.schema';
+import {
+  Announcement,
+  AnnouncementSchema,
+} from './schemas/announcement.schema';
+import {
+  Coupon,
+  CouponSchema,
+  CouponUsage,
+  CouponUsageSchema,
+} from './schemas/coupon.schema';
+import {
+  Settlement,
+  SettlementSchema,
+  CreatorEarning,
+  CreatorEarningSchema,
+} from './schemas/settlement.schema';
 import { FAQ, FAQSchema } from './schemas/faq.schema';
 
 @Module({

@@ -64,9 +64,14 @@ export class ImageAssetController {
       characterId: body.characterId,
       presetId: body.presetId,
       type: body.type || ImageAssetType.OTHER,
-      tags: body.tags ? (Array.isArray(body.tags) ? body.tags : [body.tags]) : [],
+      tags: body.tags
+        ? Array.isArray(body.tags)
+          ? body.tags
+          : [body.tags]
+        : [],
       description: body.description,
-      isAdultContent: body.isAdultContent === 'true' || body.isAdultContent === true,
+      isAdultContent:
+        body.isAdultContent === 'true' || body.isAdultContent === true,
     };
 
     return this.imageAssetService.uploadAndCreateAsset(
@@ -148,7 +153,8 @@ export class ImageAssetController {
   @ApiResponse({ status: 404, description: '이미지를 찾을 수 없습니다.' })
   async updateAsset(
     @Param('id') id: string,
-    @Body() body: { tags?: string[]; description?: string; type?: ImageAssetType },
+    @Body()
+    body: { tags?: string[]; description?: string; type?: ImageAssetType },
     @Request() req,
   ) {
     return this.imageAssetService.update(id, req.user.userId, body);

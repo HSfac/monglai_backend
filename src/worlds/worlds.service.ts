@@ -12,11 +12,12 @@ import { Visibility } from '../characters/schemas/character.schema';
 
 @Injectable()
 export class WorldsService {
-  constructor(
-    @InjectModel(World.name) private worldModel: Model<World>,
-  ) {}
+  constructor(@InjectModel(World.name) private worldModel: Model<World>) {}
 
-  async create(createWorldDto: CreateWorldDto, creatorId: string): Promise<World> {
+  async create(
+    createWorldDto: CreateWorldDto,
+    creatorId: string,
+  ): Promise<World> {
     const world = new this.worldModel({
       ...createWorldDto,
       creator: new Types.ObjectId(creatorId),
@@ -31,7 +32,13 @@ export class WorldsService {
     search?: string;
     creatorId?: string;
     visibility?: Visibility;
-  }): Promise<{ worlds: World[]; total: number; page: number; limit: number; totalPages: number }> {
+  }): Promise<{
+    worlds: World[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
     const { page = 1, limit = 20, tags, search, creatorId, visibility } = query;
     const skip = (page - 1) * limit;
 
@@ -94,7 +101,8 @@ export class WorldsService {
 
     // 비공개 세계관 접근 제어
     if (world.visibility === Visibility.PRIVATE) {
-      const creatorId = (world.creator as any)._id?.toString() || world.creator.toString();
+      const creatorId =
+        (world.creator as any)._id?.toString() || world.creator.toString();
       if (!userId || creatorId !== userId) {
         throw new ForbiddenException('이 세계관에 접근할 권한이 없습니다.');
       }
@@ -148,7 +156,9 @@ export class WorldsService {
   }
 
   async incrementCharacterCount(id: string, delta: number = 1): Promise<void> {
-    await this.worldModel.findByIdAndUpdate(id, { $inc: { characterCount: delta } });
+    await this.worldModel.findByIdAndUpdate(id, {
+      $inc: { characterCount: delta },
+    });
   }
 
   async like(id: string): Promise<World> {
@@ -174,7 +184,9 @@ export class WorldsService {
       .exec();
   }
 
-  async getPopularTags(limit: number = 20): Promise<{ tag: string; count: number }[]> {
+  async getPopularTags(
+    limit: number = 20,
+  ): Promise<{ tag: string; count: number }[]> {
     const result = await this.worldModel.aggregate([
       { $match: { visibility: Visibility.PUBLIC } },
       { $unwind: '$tags' },

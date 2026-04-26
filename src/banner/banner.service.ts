@@ -18,16 +18,10 @@ export class BannerService {
     return this.bannerModel
       .find({
         isActive: true,
-        $or: [
-          { startDate: { $exists: false } },
-          { startDate: { $lte: now } },
-        ],
+        $or: [{ startDate: { $exists: false } }, { startDate: { $lte: now } }],
         $and: [
           {
-            $or: [
-              { endDate: { $exists: false } },
-              { endDate: { $gte: now } },
-            ],
+            $or: [{ endDate: { $exists: false } }, { endDate: { $gte: now } }],
           },
         ],
       })

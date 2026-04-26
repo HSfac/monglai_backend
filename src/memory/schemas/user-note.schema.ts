@@ -2,15 +2,15 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 
 export enum NoteTargetType {
-  SESSION = 'session',     // 특정 세션(채팅)에만 적용
+  SESSION = 'session', // 특정 세션(채팅)에만 적용
   CHARACTER = 'character', // 해당 캐릭터와의 모든 세션에 적용
 }
 
 export enum NoteCategory {
-  RULE = 'rule',           // 규칙/설정 (예: "항상 로맨스 분위기 유지")
-  MEMORY = 'memory',       // 기억해야 할 사실
+  RULE = 'rule', // 규칙/설정 (예: "항상 로맨스 분위기 유지")
+  MEMORY = 'memory', // 기억해야 할 사실
   PREFERENCE = 'preference', // 선호 설정
-  BOOKMARK = 'bookmark',   // 북마크/중요 포인트
+  BOOKMARK = 'bookmark', // 북마크/중요 포인트
 }
 
 @Schema({ timestamps: true })

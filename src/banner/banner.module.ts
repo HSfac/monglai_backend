@@ -3,9 +3,11 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { BannerController } from './banner.controller';
 import { BannerService } from './banner.service';
 import { Banner, BannerSchema } from './banner.schema';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
+    AuthModule,
     MongooseModule.forFeature([{ name: Banner.name, schema: BannerSchema }]),
   ],
   controllers: [BannerController],

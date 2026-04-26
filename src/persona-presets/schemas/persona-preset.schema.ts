@@ -2,17 +2,21 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 
 export enum PresetMood {
-  COMIC = 'comic',       // 코믹/유쾌
-  CALM = 'calm',         // 잔잔/평온
-  SERIOUS = 'serious',   // 진지/심각
-  DARK = 'dark',         // 어두운/우울
+  COMIC = 'comic', // 코믹/유쾌
+  CALM = 'calm', // 잔잔/평온
+  SERIOUS = 'serious', // 진지/심각
+  DARK = 'dark', // 어두운/우울
   ROMANTIC = 'romantic', // 로맨틱
-  TENSE = 'tense',       // 긴장감
+  TENSE = 'tense', // 긴장감
 }
 
 @Schema({ timestamps: true })
 export class PersonaPreset extends Document {
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Character', required: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'Character',
+    required: true,
+  })
   characterId: MongooseSchema.Types.ObjectId;
 
   @Prop({ required: true })

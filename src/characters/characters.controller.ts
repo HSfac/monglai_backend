@@ -1,7 +1,23 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Query, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  Query,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { CharactersService } from './characters.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { CreateCharacterDto } from './dto/create-character.dto';
 import { UpdateCharacterDto } from './dto/update-character.dto';
 import { AIService } from '../chat/ai.service';
@@ -26,13 +42,10 @@ export class CharactersController {
   @Get()
   @ApiOperation({ summary: '공개 캐릭터 목록 조회' })
   @ApiResponse({ status: 200, description: '캐릭터 목록 조회 성공' })
-  async findAll(
-    @Query('query') query: string,
-    @Query('tags') tags: string,
-  ) {
+  async findAll(@Query('query') query: string, @Query('tags') tags: string) {
     // 태그 검색
     if (tags) {
-      const tagArray = tags.split(',').map(tag => tag.trim());
+      const tagArray = tags.split(',').map((tag) => tag.trim());
       return this.charactersService.searchByTags(tagArray);
     }
 
@@ -65,7 +78,32 @@ export class CharactersController {
     @Query('period') period?: 'daily' | 'weekly' | 'monthly' | 'all-time',
     @Query('limit') limit?: number,
   ) {
-    return this.charactersService.getLeaderboard(period || 'all-time', limit || 50);
+    return this.charactersService.getLeaderboard(
+      period || 'all-time',
+      limit || 50,
+    );
+  }
+
+  @Get('creator/public/:creatorId')
+  @ApiOperation({ summary: '공개 크리에이터 캐릭터 목록 조회' })
+  @ApiResponse({ status: 200, description: '공개 캐릭터 목록 조회 성공' })
+  async findPublicByCreator(@Param('creatorId') creatorId: string) {
+    return this.charactersService.findPublicByCreator(creatorId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('feed/following')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '팔로우한 크리에이터의 최신 공개 캐릭터 피드' })
+  @ApiResponse({ status: 200, description: '팔로우 피드 조회 성공' })
+  async getFollowingFeed(
+    @Request() req,
+    @Query('limit') limit?: number,
+  ) {
+    return this.charactersService.getFollowingFeed(
+      req.user.userId,
+      limit ? Number(limit) : 6,
+    );
   }
 
   @Get(':id')
@@ -73,7 +111,7 @@ export class CharactersController {
   @ApiResponse({ status: 200, description: '캐릭터 조회 성공' })
   @ApiResponse({ status: 404, description: '캐릭터를 찾을 수 없음' })
   async findOne(@Param('id') id: string) {
-    return this.charactersService.findById(id);
+    return this.charactersService.findPublicById(id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -87,7 +125,11 @@ export class CharactersController {
     @Param('id') id: string,
     @Body() updateCharacterDto: UpdateCharacterDto,
   ) {
-    return this.charactersService.update(id, req.user.userId, updateCharacterDto);
+    return this.charactersService.update(
+      id,
+      req.user.userId,
+      updateCharacterDto,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -134,10 +176,20 @@ export class CharactersController {
   @ApiOperation({ summary: '크리에이터 대시보드 통계' })
   @ApiResponse({ status: 200, description: '대시보드 통계 조회 성공' })
   async getCreatorDashboard(@Request() req) {
-    const characters = await this.charactersService.findByCreator(req.user.userId);
-    const earnings = await this.charactersService.getCreatorEarnings(req.user.userId);
+    const characters = await this.charactersService.findByCreator(
+      req.user.userId,
+    );
+    const earnings = await this.charactersService.getCreatorEarnings(
+      req.user.userId,
+    );
+    const analytics = await this.charactersService.getCreatorAnalytics(
+      req.user.userId,
+    );
 
-    const totalUsage = characters.reduce((sum, char) => sum + char.usageCount, 0);
+    const totalUsage = characters.reduce(
+      (sum, char) => sum + char.usageCount,
+      0,
+    );
     const totalLikes = characters.reduce((sum, char) => sum + char.likes, 0);
 
     return {
@@ -151,6 +203,7 @@ export class CharactersController {
         totalEarnings: earnings.totalEarnings,
         totalConversations: earnings.totalConversations,
       },
+      analytics,
       earnings: earnings.earnings,
     };
   }
@@ -169,7 +222,9 @@ export class CharactersController {
     }
 
     try {
-      const characterData = await this.aiService.analyzeImageForCharacter(body.imageUrl);
+      const characterData = await this.aiService.analyzeImageForCharacter(
+        body.imageUrl,
+      );
       return {
         success: true,
         data: characterData,
@@ -191,7 +246,8 @@ export class CharactersController {
   @ApiResponse({ status: 200, description: '필드 생성 성공' })
   @ApiResponse({ status: 400, description: '필드명이 필요합니다' })
   async generateField(
-    @Body() body: {
+    @Body()
+    body: {
       fieldName: string;
       context: {
         name?: string;
@@ -226,4 +282,4 @@ export class CharactersController {
       };
     }
   }
-} 
+}

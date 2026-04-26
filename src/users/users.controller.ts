@@ -1,7 +1,21 @@
-import { Controller, Get, Put, Delete, Param, Body, UseGuards, Request, Post } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Put,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 @ApiTags('사용자')
 @Controller('users')
@@ -14,7 +28,33 @@ export class UsersController {
   @ApiOperation({ summary: '내 정보 조회' })
   @ApiResponse({ status: 200, description: '사용자 정보 조회 성공' })
   async getMe(@Request() req) {
-    return this.usersService.findById(req.user.userId);
+    return this.usersService.getMeProfile(req.user.userId);
+  }
+
+  @Get('creators/:id')
+  @ApiOperation({ summary: '공개 크리에이터 프로필 조회' })
+  @ApiResponse({ status: 200, description: '크리에이터 프로필 조회 성공' })
+  @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
+  async getCreatorProfile(@Param('id') id: string) {
+    return this.usersService.getCreatorPublicProfile(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('creators/:creatorId/follow')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '크리에이터 팔로우' })
+  @ApiResponse({ status: 200, description: '크리에이터 팔로우 성공' })
+  async followCreator(@Request() req, @Param('creatorId') creatorId: string) {
+    return this.usersService.followCreator(req.user.userId, creatorId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('creators/:creatorId/follow')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '크리에이터 언팔로우' })
+  @ApiResponse({ status: 200, description: '크리에이터 언팔로우 성공' })
+  async unfollowCreator(@Request() req, @Param('creatorId') creatorId: string) {
+    return this.usersService.unfollowCreator(req.user.userId, creatorId);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -41,8 +81,14 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: '캐릭터 즐겨찾기 추가' })
   @ApiResponse({ status: 200, description: '즐겨찾기 추가 성공' })
-  async addToFavorites(@Request() req, @Param('characterId') characterId: string) {
-    return this.usersService.addCharacterToFavorites(req.user.userId, characterId);
+  async addToFavorites(
+    @Request() req,
+    @Param('characterId') characterId: string,
+  ) {
+    return this.usersService.addCharacterToFavorites(
+      req.user.userId,
+      characterId,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -50,29 +96,13 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: '캐릭터 즐겨찾기 제거' })
   @ApiResponse({ status: 200, description: '즐겨찾기 제거 성공' })
-  async removeFromFavorites(@Request() req, @Param('characterId') characterId: string) {
-    return this.usersService.removeCharacterFromFavorites(req.user.userId, characterId);
+  async removeFromFavorites(
+    @Request() req,
+    @Param('characterId') characterId: string,
+  ) {
+    return this.usersService.removeCharacterFromFavorites(
+      req.user.userId,
+      characterId,
+    );
   }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('me/adult-verify')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '성인인증' })
-  @ApiResponse({ status: 200, description: '성인인증 성공' })
-  async verifyAdult(@Request() req, @Body() verifyDto: { verificationToken: string }) {
-    return this.usersService.verifyAdult(req.user.userId, verifyDto.verificationToken);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('me/adult-status')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '성인인증 상태 조회' })
-  @ApiResponse({ status: 200, description: '성인인증 상태 조회 성공' })
-  async getAdultStatus(@Request() req) {
-    const user = await this.usersService.findById(req.user.userId);
-    return {
-      isAdultVerified: user.isAdultVerified,
-      adultVerifiedAt: user.adultVerifiedAt,
-    };
-  }
-} 
+}

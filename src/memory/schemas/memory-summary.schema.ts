@@ -1,6 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 
+export enum MemoryType {
+  SUMMARY = 'summary',
+  EVENT = 'event',
+}
+
 @Schema()
 export class MessageRange {
   @Prop({ required: true })
@@ -23,6 +28,12 @@ export class MemorySummary extends Document {
   @Prop({ required: true })
   summaryText: string; // 요약 내용
 
+  @Prop({ enum: MemoryType, default: MemoryType.SUMMARY })
+  memoryType: MemoryType; // 요약 메모리 / 사건 메모리 구분
+
+  @Prop()
+  eventCategory?: string; // 사건 메모리 유형 (flag, relationship, scene 등)
+
   @Prop({ type: [String], default: [] })
   keyEvents: string[]; // 핵심 이벤트 목록
 
@@ -44,4 +55,5 @@ export const MemorySummarySchema = SchemaFactory.createForClass(MemorySummary);
 
 // 인덱스 설정
 MemorySummarySchema.index({ sessionId: 1 });
+MemorySummarySchema.index({ sessionId: 1, memoryType: 1, createdAt: -1 });
 MemorySummarySchema.index({ createdAt: -1 });

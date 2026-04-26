@@ -136,7 +136,10 @@ export class MemoryController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '컨텍스트 포함 토글' })
-  @ApiResponse({ status: 200, description: '컨텍스트 포함 상태가 변경되었습니다.' })
+  @ApiResponse({
+    status: 200,
+    description: '컨텍스트 포함 상태가 변경되었습니다.',
+  })
   async toggleContext(@Param('id') id: string, @Request() req) {
     return this.memoryService.toggleIncludeInContext(id, req.user.userId);
   }

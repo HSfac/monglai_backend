@@ -7,7 +7,8 @@ import { NotificationsGateway } from './notifications.gateway';
 @Injectable()
 export class NotificationsService {
   constructor(
-    @InjectModel(Notification.name) private notificationModel: Model<Notification>,
+    @InjectModel(Notification.name)
+    private notificationModel: Model<Notification>,
     @Inject(forwardRef(() => NotificationsGateway))
     private notificationsGateway: NotificationsGateway,
   ) {}
@@ -32,7 +33,10 @@ export class NotificationsService {
 
     // WebSocket으로 실시간 알림 전송
     if (this.notificationsGateway) {
-      await this.notificationsGateway.sendNotificationToUser(userId, savedNotification);
+      await this.notificationsGateway.sendNotificationToUser(
+        userId,
+        savedNotification,
+      );
     }
 
     return savedNotification;
@@ -91,7 +95,9 @@ export class NotificationsService {
     const date = new Date();
     date.setDate(date.getDate() - days);
 
-    await this.notificationModel.deleteMany({ createdAt: { $lt: date } }).exec();
+    await this.notificationModel
+      .deleteMany({ createdAt: { $lt: date } })
+      .exec();
   }
 
   async getUnreadCount(userId: string): Promise<number> {
@@ -124,7 +130,10 @@ export class NotificationsService {
   /**
    * 구독 시작 알림
    */
-  async notifySubscriptionStart(userId: string, planName: string): Promise<void> {
+  async notifySubscriptionStart(
+    userId: string,
+    planName: string,
+  ): Promise<void> {
     await this.create(
       userId,
       '구독 시작',
@@ -137,13 +146,16 @@ export class NotificationsService {
   /**
    * 구독 만료 임박 알림 (3일 전)
    */
-  async notifySubscriptionExpiring(userId: string, daysLeft: number): Promise<void> {
+  async notifySubscriptionExpiring(
+    userId: string,
+    daysLeft: number,
+  ): Promise<void> {
     await this.create(
       userId,
       '구독 만료 임박',
       `구독이 ${daysLeft}일 후 만료됩니다. 구독을 연장하시겠어요?`,
       NotificationType.WARNING,
-      '/pricing',
+      '/tokens',
     );
   }
 
@@ -156,59 +168,88 @@ export class NotificationsService {
       '크리에이터 레벨업!',
       `축하합니다! ${newLevel} 크리에이터가 되었습니다.`,
       NotificationType.SUCCESS,
-      '/characters/creator/dashboard',
+      '/creator/dashboard',
     );
   }
 
   /**
    * 캐릭터 인기 진입 알림
    */
-  async notifyCharacterPopular(userId: string, characterName: string, rank: number): Promise<void> {
+  async notifyCharacterPopular(
+    userId: string,
+    characterName: string,
+    rank: number,
+  ): Promise<void> {
     await this.create(
       userId,
       '캐릭터 인기 순위 진입!',
       `'${characterName}' 캐릭터가 인기 순위 ${rank}위에 진입했습니다!`,
       NotificationType.SUCCESS,
-      '/characters/creator/dashboard',
+      '/creator/dashboard',
     );
   }
 
   /**
    * 월간 보너스 지급 알림
    */
-  async notifyMonthlyBonus(userId: string, bonusTokens: number, rank: number): Promise<void> {
+  async notifyMonthlyBonus(
+    userId: string,
+    bonusTokens: number,
+    rank: number,
+  ): Promise<void> {
     await this.create(
       userId,
       '월간 보너스 지급',
       `이번 달 ${rank}위로 ${bonusTokens}개의 보너스 토큰을 받았습니다!`,
       NotificationType.SUCCESS,
-      '/characters/creator/earnings',
+      '/creator/dashboard',
     );
   }
 
   /**
    * 캐릭터 검증 완료 알림
    */
-  async notifyCharacterVerified(userId: string, characterName: string): Promise<void> {
+  async notifyCharacterVerified(
+    userId: string,
+    characterName: string,
+  ): Promise<void> {
     await this.create(
       userId,
       '캐릭터 검증 완료',
       `'${characterName}' 캐릭터가 관리자에 의해 검증되었습니다.`,
       NotificationType.SUCCESS,
-      '/characters/creator/dashboard',
+      '/creator/dashboard',
     );
   }
 
   /**
    * 토큰 부족 경고
    */
-  async notifyLowTokens(userId: string, remainingTokens: number): Promise<void> {
+  async notifyLowTokens(
+    userId: string,
+    remainingTokens: number,
+  ): Promise<void> {
     await this.create(
       userId,
       '토큰 부족',
       `토큰이 ${remainingTokens}개 남았습니다. 토큰을 충전하거나 구독을 신청하세요.`,
       NotificationType.WARNING,
-      '/pricing',
+      '/tokens',
     );
   }
-} 
+
+  async notifyCreatorPublishedCharacter(
+    userId: string,
+    creatorName: string,
+    characterId: string,
+    characterName: string,
+  ): Promise<void> {
+    await this.create(
+      userId,
+      '팔로우한 크리에이터의 신작 공개',
+      `${creatorName} 크리에이터가 '${characterName}' 캐릭터를 새로 공개했습니다.`,
+      NotificationType.CREATOR_UPDATE,
+      `/characters/${characterId}`,
+    );
+  }
+}

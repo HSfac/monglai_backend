@@ -43,7 +43,10 @@ export class CreateWorldDto {
 
   @ApiPropertyOptional({
     description: '세계관 규칙',
-    example: ['요괴는 인간에게 정체를 숨겨야 한다', '마법은 밤에만 사용 가능하다'],
+    example: [
+      '요괴는 인간에게 정체를 숨겨야 한다',
+      '마법은 밤에만 사용 가능하다',
+    ],
     isArray: true,
   })
   @IsArray()

@@ -1,7 +1,10 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Chat, ChatSchema } from './schemas/chat.schema';
-import { SessionState, SessionStateSchema } from './schemas/session-state.schema';
+import {
+  SessionState,
+  SessionStateSchema,
+} from './schemas/session-state.schema';
 import { ChatController } from './chat.controller';
 import { ChatService } from './chat.service';
 import { CharactersModule } from '../characters/characters.module';
@@ -12,10 +15,19 @@ import { ContextBuilderService } from './services/context-builder.service';
 import { WorldsModule } from '../worlds/worlds.module';
 import { PersonaPresetsModule } from '../persona-presets/persona-presets.module';
 import { MemoryModule } from '../memory/memory.module';
-import { Character, CharacterSchema } from '../characters/schemas/character.schema';
+import {
+  Character,
+  CharacterSchema,
+} from '../characters/schemas/character.schema';
 import { World, WorldSchema } from '../worlds/schemas/world.schema';
-import { PersonaPreset, PersonaPresetSchema } from '../persona-presets/schemas/persona-preset.schema';
-import { MemorySummary, MemorySummarySchema } from '../memory/schemas/memory-summary.schema';
+import {
+  PersonaPreset,
+  PersonaPresetSchema,
+} from '../persona-presets/schemas/persona-preset.schema';
+import {
+  MemorySummary,
+  MemorySummarySchema,
+} from '../memory/schemas/memory-summary.schema';
 import { UserNote, UserNoteSchema } from '../memory/schemas/user-note.schema';
 
 @Module({
@@ -36,7 +48,12 @@ import { UserNote, UserNoteSchema } from '../memory/schemas/user-note.schema';
     MemoryModule,
   ],
   controllers: [ChatController],
-  providers: [ChatService, AIService, ContentFilterService, ContextBuilderService],
+  providers: [
+    ChatService,
+    AIService,
+    ContentFilterService,
+    ContextBuilderService,
+  ],
   exports: [ChatService, ContextBuilderService, AIService],
 })
-export class ChatModule {} 
+export class ChatModule {}

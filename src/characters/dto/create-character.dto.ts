@@ -22,13 +22,64 @@ export class ExampleDialogueDto {
   @IsNotEmpty()
   user: string;
 
-  @ApiProperty({ description: '캐릭터 응답', example: '안녕하세요! 만나서 반갑습니다 😊' })
+  @ApiProperty({
+    description: '캐릭터 응답',
+    example: '안녕하세요! 만나서 반갑습니다 😊',
+  })
   @IsString()
   @IsNotEmpty()
   character: string;
 }
 
 export class CreateCharacterDto {
+  @ApiPropertyOptional({ description: '소속 세계관 ID' })
+  @IsString()
+  @IsOptional()
+  worldId?: string;
+
+  @ApiPropertyOptional({ description: '표기 나이 (예: 20대 초반, 수백 년)', example: '20대 초반' })
+  @IsString()
+  @IsOptional()
+  ageDisplay?: string;
+
+  @ApiPropertyOptional({ description: '종족 (예: 인간, 요괴, AI)', example: '인간' })
+  @IsString()
+  @IsOptional()
+  species?: string;
+
+  @ApiPropertyOptional({ description: '역할 (예: 학생, 직장인, 용사)', example: '학생' })
+  @IsString()
+  @IsOptional()
+  role?: string;
+
+  @ApiPropertyOptional({ description: '외형 묘사' })
+  @IsString()
+  @IsOptional()
+  appearance?: string;
+
+  @ApiPropertyOptional({ description: '백스토리' })
+  @IsString()
+  @IsOptional()
+  backgroundStory?: string;
+
+  @ApiPropertyOptional({ description: '핵심 성격 키워드', example: ['밝음', '츤데레'] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  personalityCore?: string[];
+
+  @ApiPropertyOptional({ description: '좋아하는 것', example: ['커피', '독서'] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  characterLikes?: string[];
+
+  @ApiPropertyOptional({ description: '싫어하는 것', example: ['거짓말', '소음'] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  characterDislikes?: string[];
+
   @ApiProperty({
     description: '캐릭터 이름',
     example: '친절한 AI 비서',
@@ -53,7 +104,8 @@ export class CreateCharacterDto {
 
   @ApiProperty({
     description: '캐릭터 성격 (상세 설정)',
-    example: '당신은 친절하고 전문적인 AI 비서입니다. 항상 공손하고 예의 바른 태도로 답변합니다.',
+    example:
+      '당신은 친절하고 전문적인 AI 비서입니다. 항상 공손하고 예의 바른 태도로 답변합니다.',
     minLength: 20,
   })
   @IsString()
@@ -63,7 +115,8 @@ export class CreateCharacterDto {
 
   @ApiProperty({
     description: '말투 및 대화 스타일',
-    example: '존댓말을 사용하며 정중하게 대화합니다. 이모티콘을 적절히 사용해 친근하게 다가갑니다.',
+    example:
+      '존댓말을 사용하며 정중하게 대화합니다. 이모티콘을 적절히 사용해 친근하게 다가갑니다.',
     minLength: 20,
   })
   @IsString()

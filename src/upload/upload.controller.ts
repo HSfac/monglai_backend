@@ -1,22 +1,42 @@
 import {
   Controller,
   Post,
+  Put,
   UseGuards,
   UseInterceptors,
   UploadedFile,
   Delete,
   Body,
+  Param,
+  Req,
+  Inject,
+  Optional,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UploadService } from './upload.service';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { LocalStorageService } from './local-storage.service';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { GetPresignedUrlDto, DeleteImageDto } from './dto/presigned-url.dto';
+import { Request } from 'express';
+import { STORAGE_PROVIDER_TOKEN } from './storage.interface';
 
 @ApiTags('업로드')
 @Controller('upload')
 export class UploadController {
-  constructor(private readonly uploadService: UploadService) {}
+  constructor(
+    private readonly uploadService: UploadService,
+    @Optional()
+    @Inject(STORAGE_PROVIDER_TOKEN)
+    private readonly storageProvider: any,
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   @Post('image')
@@ -27,12 +47,7 @@ export class UploadController {
   @ApiBody({
     schema: {
       type: 'object',
-      properties: {
-        image: {
-          type: 'string',
-          format: 'binary',
-        },
-      },
+      properties: { image: { type: 'string', format: 'binary' } },
     },
   })
   @UseInterceptors(FileInterceptor('image'))
@@ -54,19 +69,8 @@ export class UploadController {
   @UseGuards(JwtAuthGuard)
   @Post('presigned-url')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Presigned Upload URL 생성' })
-  @ApiResponse({
-    status: 201,
-    description: 'Presigned URL 생성 성공',
-    schema: {
-      type: 'object',
-      properties: {
-        uploadUrl: { type: 'string' },
-        fileKey: { type: 'string' },
-        fileUrl: { type: 'string' },
-      },
-    },
-  })
+  @ApiOperation({ summary: 'Presigned Upload URL 생성 (로컬/S3 자동 선택)' })
+  @ApiResponse({ status: 201, description: 'URL 생성 성공' })
   async getPresignedUploadUrl(@Body() body: GetPresignedUrlDto) {
     return this.uploadService.getPresignedUploadUrl(
       body.fileName,
@@ -74,4 +78,19 @@ export class UploadController {
       body.folder,
     );
   }
-} 
+
+  // 로컬 스토리지 전용 PUT 엔드포인트 (S3 presigned URL 흐름을 로컬에서 모사)
+  @Put('local/:filename')
+  @ApiOperation({ summary: '로컬 파일 업로드 수신 (개발용)' })
+  async receiveLocalUpload(
+    @Param('filename') filename: string,
+    @Req() req: Request,
+  ) {
+    if (!(this.storageProvider instanceof LocalStorageService)) {
+      return { ok: true }; // S3 모드에서는 이 경로가 호출되지 않음
+    }
+    const buffer: Buffer = req.body as Buffer;
+    this.storageProvider.saveLocalUpload(filename, buffer);
+    return { ok: true };
+  }
+}

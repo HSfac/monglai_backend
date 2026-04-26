@@ -14,12 +14,12 @@ export class RolesGuard implements CanActivate {
     if (!roles) {
       return true;
     }
-    
+
     const request = context.switchToHttp().getRequest();
     const userId = request.user.userId;
-    
+
     const user = await this.usersService.findById(userId);
-    
+
     return roles.includes('admin') ? user.isAdmin : true;
   }
-} 
+}

@@ -12,7 +12,6 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { PaymentModule } from './payment/payment.module';
 import { UploadModule } from './upload/upload.module';
 import { AdminModule } from './admin/admin.module';
-import { VerificationModule } from './verification/verification.module';
 import { BannerModule } from './banner/banner.module';
 import { WorldsModule } from './worlds/worlds.module';
 import { PersonaPresetsModule } from './persona-presets/persona-presets.module';
@@ -42,7 +41,6 @@ import { validate } from './config/env.validation';
     PaymentModule,
     UploadModule,
     AdminModule,
-    VerificationModule,
     BannerModule,
     WorldsModule,
     PersonaPresetsModule,
@@ -51,4 +49,4 @@ import { validate } from './config/env.validation';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {} 
+export class AppModule {}
